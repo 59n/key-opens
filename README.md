@@ -4,6 +4,8 @@ TradingView overlay for **ICT-style key session opens**, opening gaps, and sessi
 
 All times are **America/New_York**.
 
+![Key Opens on a gold futures chart — daily/midnight opens, session highs and lows, info panel](showcase/key-opens.png)
+
 ## Features
 
 - **Key opens** — 18:00 daily, True Asia, 22:00, midnight, True London, London, True NY, pre-market, NY open, 10am, plus three custom H:M opens
