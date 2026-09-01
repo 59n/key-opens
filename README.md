@@ -1,6 +1,6 @@
 # Key Opens
 
-TradingView overlay for **ICT key opens** — session opens, opening gaps, session highs/lows, and the **Powell 10am** print. Built for index futures (NQ, MNQ, ES, MES) with **1-minute accurate** timestamps even on higher timeframes.
+TradingView overlay for **Powell's key opens** and the **10am model** he teaches and trades — session opens, opening gaps, and session highs/lows. Built for index futures (NQ, MNQ, ES, MES) with **1-minute accurate** timestamps even on higher timeframes.
 
 All times are **America/New_York**.
 
@@ -13,7 +13,7 @@ All times are **America/New_York**.
 - **Prior range** — PDH/PDL, PWH/PWL, ATH
 - **Session H/L** — Asia, London, NY AM, NY PM, with optional freeze when the next session takes them out
 - **NDOG & NWOG** — extending gap boxes/lines with top, mid (CE), and bottom
-- **Powell 10am / 10:00 key open** — dedicated group for the 10am open (FOMC/Powell, ISM, and other 10:00 NY releases), a short volume-imbalance box, and optional NQ vs MNQ 10:00 lines
+- **Powell 10am model** — the 10:00 NY key open Powell trades (4-hour candle open), plus a short volume-imbalance box and optional NQ vs MNQ 10:00 lines
 - **Tap detection** — 1-minute engine marks levels tested after a candle/time delay; optional hide-when-tapped and per-category line styles
 - **Info panel** — live prices, active vs tapped, tap time; optional checklist
 
@@ -25,9 +25,9 @@ All times are **America/New_York**.
 
 Works on any timeframe. On charts above 1 minute, opens and taps are still taken from 1-minute data.
 
-## Powell 10am Open
+## Powell 10am model
 
-The **10am key open** is the 10:00 NY print — Powell / FOMC, ISM, and other 10:00 releases. NQ/MNQ often gap versus the 9:59 close (volume imbalance), and the two contracts can print different opens.
+This is the **10am key open** from Powell Trades — 10:00 NY, the open of the 4-hour candle. NQ/MNQ often gap versus the 9:59 close (volume imbalance), and the two contracts can print different opens.
 
 | Setting | What it does |
 |---|---|
