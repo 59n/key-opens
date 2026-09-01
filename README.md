@@ -4,6 +4,12 @@ TradingView overlay for **Powell's key opens** and the **10am model** he teaches
 
 All times are **America/New_York**.
 
+This repo is the **source code**. To put it on a chart, add the published indicator — you do not need to paste Pine yourself:
+
+**[Key Opens on TradingView](https://www.tradingview.com/script/b9dUOCXq-Key-Opens-nqjack/)**
+
+Tinker with [`key_opens.pine`](key_opens.pine) here if you want to change the script.
+
 ![Key Opens on a gold futures chart — daily/midnight opens, session highs and lows, info panel](showcase/key-opens.png)
 
 ## Features
@@ -19,9 +25,9 @@ All times are **America/New_York**.
 
 ## Install
 
-1. Open [TradingView](https://www.tradingview.com) → Pine Editor
-2. New script → paste [`key_opens.pine`](key_opens.pine)
-3. Save → Add to chart
+**Use it on a chart:** add [Key Opens](https://www.tradingview.com/script/b9dUOCXq-Key-Opens-nqjack/) from TradingView indicators (author **nqjack**). That is the supported copy.
+
+**This GitHub repo** is source only. Fork or copy [`key_opens.pine`](key_opens.pine) into the Pine Editor if you want to edit it.
 
 Works on any timeframe. On charts above 1 minute, opens and taps are still taken from 1-minute data.
 
