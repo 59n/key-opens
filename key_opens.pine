@@ -1,0 +1,1406 @@
+//@version=6
+indicator("Key Opens", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=50)
+
+grp_market = "KEY LEVELS"
+show_1800 = input.bool(true, "18:00", inline="1800", group=grp_market)
+c_1800_in = input.color(color.new(color.black, 0), "", inline="1800", group=grp_market)
+txt_1800  = input.string("Daily Open", "", inline="1800", group=grp_market)
+
+show_1930 = input.bool(false, "19:30", inline="1930", group=grp_market)
+c_1930_in = input.color(color.new(color.black, 0), "", inline="1930", group=grp_market)
+txt_1930  = input.string("True Asia", "", inline="1930", group=grp_market)
+
+show_2200 = input.bool(false, "22:00", inline="2200", group=grp_market)
+c_2200_in = input.color(color.new(color.black, 0), "", inline="2200", group=grp_market)
+txt_2200  = input.string("10pm Open", "", inline="2200", group=grp_market)
+
+show_0000 = input.bool(true, "00:00", inline="0000", group=grp_market)
+c_0000_in = input.color(color.new(color.black, 0), "", inline="0000", group=grp_market)
+txt_0000  = input.string("Midnight Open", "", inline="0000", group=grp_market)
+
+show_0130 = input.bool(false, "01:30", inline="0130", group=grp_market)
+c_0130_in = input.color(color.new(color.black, 0), "", inline="0130", group=grp_market)
+txt_0130  = input.string("True London", "", inline="0130", group=grp_market)
+
+show_0200 = input.bool(false, "02:00", inline="0200", group=grp_market)
+c_0200_in = input.color(color.new(color.black, 0), "", inline="0200", group=grp_market)
+txt_0200  = input.string("2am Open", "", inline="0200", group=grp_market)
+
+show_0300 = input.bool(false, "03:00", inline="0300", group=grp_market)
+c_0300_in = input.color(color.new(color.black, 0), "", inline="0300", group=grp_market)
+txt_0300  = input.string("London Open", "", inline="0300", group=grp_market)
+
+show_0600 = input.bool(false, "06:00", inline="0600", group=grp_market)
+c_0600_in = input.color(color.new(color.black, 0), "", inline="0600", group=grp_market)
+txt_0600  = input.string("6am Open", "", inline="0600", group=grp_market)
+
+show_0730 = input.bool(false, "07:30", inline="0730", group=grp_market)
+c_0730_in = input.color(color.new(color.black, 0), "", inline="0730", group=grp_market)
+txt_0730  = input.string("True NY", "", inline="0730", group=grp_market)
+
+show_0830 = input.bool(false, "08:30", inline="0830", group=grp_market)
+c_0830_in = input.color(color.new(color.black, 0), "", inline="0830", group=grp_market)
+txt_0830  = input.string("Pre Market", "", inline="0830", group=grp_market)
+
+show_0930 = input.bool(false, "09:30", inline="0930", group=grp_market)
+c_0930_in = input.color(color.new(color.black, 0), "", inline="0930", group=grp_market)
+txt_0930  = input.string("NY Open", "", inline="0930", group=grp_market)
+
+grp_1000 = "10AM OPEN"
+show_1000 = input.bool(true, "10:00", inline="1000", group=grp_1000)
+c_1000_in = input.color(color.new(color.black, 0), "", inline="1000", group=grp_1000)
+txt_1000  = input.string("10am Open", "", inline="1000", group=grp_1000)
+
+show_1000_vi   = input.bool(true, "Imbalance", inline="1000vi", group=grp_1000)
+c_1000_vi_bl   = input.color(color.new(#6b8cae, 0), "Bull", inline="1000vi", group=grp_1000)
+c_1000_vi_br   = input.color(color.new(#6b8cae, 0), "Bear", inline="1000vi", group=grp_1000)
+vi_transp      = input.int(50, "Box Transparency", minval=0, maxval=100, group=grp_1000)
+vi_width_bars  = input.int(2, "Box Width (Bars)", minval=1, group=grp_1000)
+vi_min_ticks   = input.float(1.0, "Min Gap (Ticks)", minval=0, step=0.25, group=grp_1000)
+
+show_nq_1000  = input.bool(false, "NQ 10am", inline="nq1000", group=grp_1000)
+c_nq_1000_in  = input.color(color.new(#1e88e5, 0), "", inline="nq1000", group=grp_1000)
+txt_nq_1000   = input.string("NQ 10am", "", inline="nq1000", group=grp_1000)
+nq_sym_in     = input.string("", "NQ Symbol (empty = auto)", group=grp_1000)
+
+show_mnq_1000 = input.bool(false, "MNQ 10am", inline="mnq1000", group=grp_1000)
+c_mnq_1000_in = input.color(color.new(#43a047, 0), "", inline="mnq1000", group=grp_1000)
+txt_mnq_1000  = input.string("MNQ 10am", "", inline="mnq1000", group=grp_1000)
+mnq_sym_in    = input.string("", "MNQ Symbol (empty = auto)", group=grp_1000)
+
+only_nq_mnq_diff = input.bool(true, "Only Show NQ/MNQ If They Differ", group=grp_1000)
+nq_mnq_diff_ticks = input.float(1.0, "Difference (Ticks)", minval=0, step=0.25, group=grp_1000)
+
+// Custom user-defined daily opens (H:M selectors — no date; NY time)
+grp_custom = "CUSTOM KEY LEVELS"
+show_c1 = input.bool(false, "", inline="c1", group=grp_custom)
+c1_h    = input.int(12, "H", minval=0, maxval=23, inline="c1", group=grp_custom)
+c1_m    = input.int(0, "M", minval=0, maxval=59, inline="c1", group=grp_custom)
+c_c1_in = input.color(color.new(color.black, 0), "", inline="c1", group=grp_custom)
+txt_c1  = input.string("Custom 1", "", inline="c1", group=grp_custom)
+
+show_c2 = input.bool(false, "", inline="c2", group=grp_custom)
+c2_h    = input.int(14, "H", minval=0, maxval=23, inline="c2", group=grp_custom)
+c2_m    = input.int(0, "M", minval=0, maxval=59, inline="c2", group=grp_custom)
+c_c2_in = input.color(color.new(color.black, 0), "", inline="c2", group=grp_custom)
+txt_c2  = input.string("Custom 2", "", inline="c2", group=grp_custom)
+
+show_c3 = input.bool(false, "", inline="c3", group=grp_custom)
+c3_h    = input.int(16, "H", minval=0, maxval=23, inline="c3", group=grp_custom)
+c3_m    = input.int(0, "M", minval=0, maxval=59, inline="c3", group=grp_custom)
+c_c3_in = input.color(color.new(color.black, 0), "", inline="c3", group=grp_custom)
+txt_c3  = input.string("Custom 3", "", inline="c3", group=grp_custom)
+
+grp_wm = "WEEKLY/MONTHLY OPENS"
+show_wo  = input.bool(false, "Weekly Open", inline="wo", group=grp_wm)
+c_wo_in  = input.color(color.new(color.black, 0), "", inline="wo", group=grp_wm)
+txt_wo   = input.string("Weekly", "", inline="wo", group=grp_wm)
+
+show_two = input.bool(false, "True Weekly", inline="two", group=grp_wm)
+c_two_in = input.color(color.new(color.black, 0), "", inline="two", group=grp_wm)
+txt_two  = input.string("True Wk", "", inline="two", group=grp_wm)
+
+show_mo  = input.bool(false, "Monthly Open", inline="mo", group=grp_wm)
+c_mo_in  = input.color(color.new(color.black, 0), "", inline="mo", group=grp_wm)
+txt_mo   = input.string("Monthly", "", inline="mo", group=grp_wm)
+
+show_tmo = input.bool(false, "True Monthly", inline="tmo", group=grp_wm)
+c_tmo_in = input.color(color.new(color.black, 0), "", inline="tmo", group=grp_wm)
+txt_tmo  = input.string("True Mo", "", inline="tmo", group=grp_wm)
+
+grp_pdhl = "PREVIOUS DAY HIGH/LOW"
+show_pdh  = input.bool(false, "PDH", inline="pdh", group=grp_pdhl)
+c_pdh_in  = input.color(color.new(color.black, 0), "", inline="pdh", group=grp_pdhl)
+txt_pdh   = input.string("PDH", "", inline="pdh", group=grp_pdhl)
+
+show_pdl  = input.bool(false, "PDL", inline="pdl", group=grp_pdhl)
+c_pdl_in  = input.color(color.new(color.black, 0), "", inline="pdl", group=grp_pdhl)
+txt_pdl   = input.string("PDL", "", inline="pdl", group=grp_pdhl)
+
+show_ath  = input.bool(false, "ATH", inline="ath", group=grp_pdhl)
+c_ath_in  = input.color(color.new(color.black, 0), "", inline="ath", group=grp_pdhl)
+txt_ath   = input.string("ATH", "", inline="ath", group=grp_pdhl)
+
+grp_pwhl = "PREVIOUS WEEK HIGH/LOW"
+show_pwh  = input.bool(false, "PWH", inline="pwh", group=grp_pwhl)
+c_pwh_in  = input.color(color.new(color.black, 0), "", inline="pwh", group=grp_pwhl)
+txt_pwh   = input.string("PWH", "", inline="pwh", group=grp_pwhl)
+
+show_pwl  = input.bool(false, "PWL", inline="pwl", group=grp_pwhl)
+c_pwl_in  = input.color(color.new(color.black, 0), "", inline="pwl", group=grp_pwhl)
+txt_pwl   = input.string("PWL", "", inline="pwl", group=grp_pwhl)
+
+// =========================================================================
+// SESSION HIGHS & LOWS
+// =========================================================================
+grp_sessions = "SESSION HIGHS & LOWS"
+sess_freeze_taken = input.bool(true, "Freeze line when taken out by next session", group=grp_sessions)
+
+show_asia_hl   = input.bool(false, "Asia H/L",   inline="asia1", group=grp_sessions)
+asia_session   = input.session("2000-0000", "",   inline="asia1", group=grp_sessions)
+panel_asia_hl  = input.bool(true,  "Panel",        inline="asia1", group=grp_sessions)
+show_asia_h  = input.bool(true,  "H",           inline="asia2", group=grp_sessions)
+c_asia_h_in  = input.color(color.new(color.black, 0), "", inline="asia2", group=grp_sessions)
+txt_asia_h   = input.string("Asia H", "",           inline="asia2", group=grp_sessions)
+show_asia_l  = input.bool(true,  "L",           inline="asia3", group=grp_sessions)
+c_asia_l_in  = input.color(color.new(color.black, 0), "", inline="asia3", group=grp_sessions)
+txt_asia_l   = input.string("Asia L", "",           inline="asia3", group=grp_sessions)
+
+show_lon_hl   = input.bool(false, "London H/L", inline="lon1", group=grp_sessions)
+lon_session   = input.session("0200-0500", "",   inline="lon1", group=grp_sessions)
+panel_lon_hl  = input.bool(true,  "Panel",        inline="lon1", group=grp_sessions)
+show_lon_h   = input.bool(true,  "H",           inline="lon2", group=grp_sessions)
+c_lon_h_in   = input.color(color.new(color.black, 0), "", inline="lon2", group=grp_sessions)
+txt_lon_h    = input.string("London H", "",         inline="lon2", group=grp_sessions)
+show_lon_l   = input.bool(true,  "L",           inline="lon3", group=grp_sessions)
+c_lon_l_in   = input.color(color.new(color.black, 0), "", inline="lon3", group=grp_sessions)
+txt_lon_l    = input.string("London L", "",         inline="lon3", group=grp_sessions)
+
+show_ny_hl    = input.bool(false, "NY AM H/L",  inline="ny1", group=grp_sessions)
+ny_session    = input.session("0930-1200", "",   inline="ny1", group=grp_sessions)
+panel_ny_hl   = input.bool(true,  "Panel",        inline="ny1", group=grp_sessions)
+show_ny_h    = input.bool(true,  "H",           inline="ny2", group=grp_sessions)
+c_ny_h_in    = input.color(color.new(color.black, 0), "", inline="ny2", group=grp_sessions)
+txt_ny_h     = input.string("NY AM H", "",          inline="ny2", group=grp_sessions)
+show_ny_l    = input.bool(true,  "L",           inline="ny3", group=grp_sessions)
+c_ny_l_in    = input.color(color.new(color.black, 0), "", inline="ny3", group=grp_sessions)
+txt_ny_l     = input.string("NY AM L", "",          inline="ny3", group=grp_sessions)
+
+show_nypm_hl  = input.bool(false, "NY PM H/L",  inline="nypm1", group=grp_sessions)
+nypm_session  = input.session("1330-1600", "",   inline="nypm1", group=grp_sessions)
+panel_nypm_hl = input.bool(true,  "Panel",        inline="nypm1", group=grp_sessions)
+show_nypm_h  = input.bool(true,  "H",           inline="nypm2", group=grp_sessions)
+c_nypm_h_in  = input.color(color.new(color.black, 0), "", inline="nypm2", group=grp_sessions)
+txt_nypm_h   = input.string("NY PM H", "",          inline="nypm2", group=grp_sessions)
+show_nypm_l  = input.bool(true,  "L",           inline="nypm3", group=grp_sessions)
+c_nypm_l_in  = input.color(color.new(color.black, 0), "", inline="nypm3", group=grp_sessions)
+txt_nypm_l   = input.string("NY PM L", "",          inline="nypm3", group=grp_sessions)
+
+grp_gaps = "OPENING GAPS (NDOG & NWOG)"
+show_ndog      = input.bool(true, "NDOG (Daily)", inline="ndog1", group=grp_gaps)
+ndog_style     = input.string("Both", "", options=["Lines", "Boxes", "Both"], inline="ndog1", group=grp_gaps)
+txt_ndog       = input.string("NDOG", "", inline="ndog1", group=grp_gaps)
+show_ndog_top  = input.bool(true, "Top", inline="ndog2", group=grp_gaps)
+show_ndog_btm  = input.bool(true, "Btm", inline="ndog2", group=grp_gaps)
+ndog_mid       = input.bool(true, "Mid", inline="ndog2", group=grp_gaps)
+c_ndog_bl      = input.color(color.new(#5b9cf6, 0), "Bull", inline="ndog3", group=grp_gaps)
+c_ndog_br      = input.color(color.new(#ba68c8, 0), "Bear", inline="ndog3", group=grp_gaps)
+
+show_nwog      = input.bool(true, "NWOG (Weekly)", inline="nwog1", group=grp_gaps)
+nwog_style     = input.string("Both", "", options=["Lines", "Boxes", "Both"], inline="nwog1", group=grp_gaps)
+txt_nwog       = input.string("NWOG", "", inline="nwog1", group=grp_gaps)
+show_nwog_top  = input.bool(true, "Top", inline="nwog2", group=grp_gaps)
+show_nwog_btm  = input.bool(true, "Btm", inline="nwog2", group=grp_gaps)
+nwog_mid       = input.bool(true, "Mid", inline="nwog2", group=grp_gaps)
+c_nwog_bl      = input.color(color.new(#5b9cf6, 0), "Bull", inline="nwog3", group=grp_gaps)
+c_nwog_br      = input.color(color.new(#ba68c8, 0), "Bear", inline="nwog3", group=grp_gaps)
+
+grp_disp = "DISPLAY"
+show_price_lbl = input.bool(true, "Show Price on Chart Labels", group=grp_disp)
+line_width     = input.int(1, "Line Width", minval=1, group=grp_disp)
+line_transp    = input.int(0, "Line Transparency", minval=0, maxval=100, group=grp_disp)
+box_transp     = input.int(85, "Box Transparency", minval=0, maxval=100, group=grp_disp)
+lbl_size_str   = input.string("normal", "Label Size", options=["tiny", "small", "normal", "large", "huge"], group=grp_disp)
+
+// Per-category line styles + what they become after a tap (Unchanged = keep category style)
+grp_ls = "LINE STYLES BY CATEGORY"
+ls_key_str      = input.string("Dotted", "Key Opens",         options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_key", tooltip="Timed opens + custom key levels")
+ls_key_test_str = input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_key")
+
+ls_wm_str       = input.string("Dashed", "Weekly / Monthly",  options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_wm", tooltip="Weekly, True Weekly, Monthly, True Monthly opens")
+ls_wm_test_str  = input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_wm")
+
+ls_prev_str     = input.string("Solid",  "Prev Day / Week & ATH", options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_prev", tooltip="PDH, PDL, PWH, PWL, ATH")
+ls_prev_test_str= input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_prev")
+
+ls_sess_str     = input.string("Solid",  "Session H/L",       options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_sess", tooltip="Asia / London / NY AM / NY PM highs & lows")
+ls_sess_test_str= input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_sess")
+
+ls_ndog_str     = input.string("Dashed", "NDOG (Daily Gap)",  options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_ndog", tooltip="NDOG top/bottom lines (mid stays dotted)")
+ls_ndog_test_str= input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_ndog")
+
+ls_nwog_str     = input.string("Dotted", "NWOG (Weekly Gap)", options=["Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_nwog", tooltip="NWOG top/bottom lines (mid stays dotted)")
+ls_nwog_test_str= input.string("Unchanged", "→ Tested",       options=["Unchanged", "Solid", "Dashed", "Dotted"], group=grp_ls, inline="ls_nwog")
+
+grp_stagger = "LINE & LABEL EXTENSION"
+lbl_dist       = input.int(15, "Extend Past Current Price (Bars)", minval=0, group=grp_stagger)
+overlap_ticks  = input.float(15.0, "Overlap Threshold (Ticks)", group=grp_stagger)
+stagger_bars   = input.int(12, "Stagger Push Distance (Bars)", group=grp_stagger)
+
+grp_test = "TESTED LEVELS & HIDING (1M ACCURACY)"
+mark_tested = input.bool(true, "Mark Levels as Tested", group=grp_test)
+hide_lvls   = input.bool(false, "Hide Tapped Standard Levels", group=grp_test)
+hide_gaps   = input.bool(false, "Hide Tapped Gaps", group=grp_test)
+test_delay  = input.int(3, "Candles to Wait", minval=0, group=grp_test, inline="delays")
+test_time_m = input.int(5, "Minutes to Wait", minval=0, group=grp_test, inline="delays")
+test_text   = input.string(" ✓", "Append to Tested Label", group=grp_test)
+
+grp_panel = "INFO PANEL"
+show_panel      = input.bool(true, "Show Info Panel", group=grp_panel)
+show_panel_price= input.bool(true, "Show Prices in Panel", inline="p_opts", group=grp_panel)
+show_panel_time = input.bool(true, "Show Tapped Times", inline="p_opts", group=grp_panel)
+panel_pos_str   = input.string("Top Right", "Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=grp_panel)
+panel_size_str  = input.string("Small", "Text Size", options=["Tiny", "Small", "Normal", "Large"], group=grp_panel)
+panel_bg        = input.color(color.new(#131722, 10), "Background", inline="p1", group=grp_panel)
+panel_border    = input.color(color.new(#363a45, 0), "Border", inline="p1", group=grp_panel)
+panel_txt_col   = input.color(color.new(color.black, 0), "Text", inline="p1", group=grp_panel)
+
+// =========================================================================
+// CHECKLIST PANEL
+// =========================================================================
+grp_chk = "CHECKLIST PANEL"
+show_chk_panel = input.bool(false, "Show Checklist Panel", group=grp_chk)
+chk_pos_str    = input.string("Top Left", "Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=grp_chk)
+chk_size_str   = input.string("Small", "Text Size", options=["Tiny", "Small", "Normal", "Large"], group=grp_chk)
+chk_bg         = input.color(color.new(#131722, 10), "Background", inline="chk_col", group=grp_chk)
+chk_border     = input.color(color.new(#363a45, 0), "Border", inline="chk_col", group=grp_chk)
+chk_txt_col    = input.color(color.new(color.black, 0), "Text", inline="chk_col", group=grp_chk)
+
+chk1_show = input.bool(true, "Line 1", inline="chk1", group=grp_chk)
+chk1_txt  = input.string("", "", inline="chk1", group=grp_chk)
+
+chk2_show = input.bool(true, "Line 2", inline="chk2", group=grp_chk)
+chk2_txt  = input.string("", "", inline="chk2", group=grp_chk)
+
+chk3_show = input.bool(true, "Line 3", inline="chk3", group=grp_chk)
+chk3_txt  = input.string("", "", inline="chk3", group=grp_chk)
+
+chk4_show = input.bool(true, "Line 4", inline="chk4", group=grp_chk)
+chk4_txt  = input.string("", "", inline="chk4", group=grp_chk)
+
+chk5_show = input.bool(true, "Line 5", inline="chk5", group=grp_chk)
+chk5_txt  = input.string("", "", inline="chk5", group=grp_chk)
+
+combine_mode    = input.string("Right", "Combine with Info Panel", options=["Off", "Below", "Right"], group=grp_chk)
+chk_copy_colors = input.bool(true, "Copy Info Panel Colors", group=grp_chk)
+
+grp_reset = "SESSION & RESET"
+reset_hr = input.int(18, "New Day Starts At (Hour)", minval=0, maxval=23, group=grp_reset)
+
+// =========================================================================
+// FORMATTING
+// =========================================================================
+tz = "America/New_York"
+
+is_mnq_chart = str.contains(syminfo.ticker, "MNQ")
+is_nq_chart  = str.contains(syminfo.ticker, "NQ") and not is_mnq_chart
+is_nasdaq_fut = is_nq_chart or is_mnq_chart
+
+resolve_fut_sym(string override, bool want_nq) =>
+    string out = syminfo.tickerid
+    if str.length(override) > 0
+        out := str.contains(override, ":") ? override : (str.length(syminfo.prefix) > 0 ? syminfo.prefix + ":" + override : override)
+    else if is_nasdaq_fut
+        if want_nq
+            out := is_mnq_chart ? str.replace(syminfo.tickerid, "MNQ", "NQ") : syminfo.tickerid
+        else
+            out := is_mnq_chart ? syminfo.tickerid : str.replace(syminfo.tickerid, "NQ", "MNQ")
+    out
+
+nq_id  = resolve_fut_sym(nq_sym_in, true)
+mnq_id = resolve_fut_sym(mnq_sym_in, false)
+
+// Map setting string → Pine line style string (line styles are strings, not ints)
+to_lstyle(s) => s == "Dashed" ? line.style_dashed : s == "Dotted" ? line.style_dotted : line.style_solid
+
+ls_key  = to_lstyle(ls_key_str)
+ls_wm   = to_lstyle(ls_wm_str)
+ls_prev = to_lstyle(ls_prev_str)
+ls_sess = to_lstyle(ls_sess_str)
+ls_ndog = to_lstyle(ls_ndog_str)
+ls_nwog = to_lstyle(ls_nwog_str)
+
+l_size  = lbl_size_str == "tiny" ? size.tiny : lbl_size_str == "small" ? size.small : lbl_size_str == "normal" ? size.normal : lbl_size_str == "large" ? size.large : size.normal
+
+// Active style: if tapped + mark_tested + category has a tested style set, use that; else keep category style
+// test_str is "Unchanged" | "Solid" | "Dashed" | "Dotted"
+active_lstyle(bool tested, string cat_style, string test_str) =>
+    mark_tested and tested and test_str != "Unchanged" ? to_lstyle(test_str) : cat_style
+
+get_pos(p) => p == "Top Right" ? position.top_right : p == "Top Left" ? position.top_left : p == "Bottom Right" ? position.bottom_right : position.bottom_left
+get_sz(s) => s == "Tiny" ? size.tiny : s == "Small" ? size.small : s == "Large" ? size.large : size.normal
+
+
+// =========================================================================
+// 1-MINUTE ENGINE
+// =========================================================================
+// request.security_lower_tf() requires the requested resolution to be <= the
+// chart's resolution. On sub-minute (seconds) charts, requesting "1" (1 min)
+// throws RE10066. Clamp the request to the chart's own resolution in that case;
+// the result is ignored anyway since use_ltf requires timeframe.in_seconds() > 60.
+ltf_res = timeframe.in_seconds() > 60 ? "1" : timeframe.period
+arr_t = request.security_lower_tf(syminfo.tickerid, ltf_res, time)
+arr_o = request.security_lower_tf(syminfo.tickerid, ltf_res, open)
+arr_h = request.security_lower_tf(syminfo.tickerid, ltf_res, high)
+arr_l = request.security_lower_tf(syminfo.tickerid, ltf_res, low)
+arr_c = request.security_lower_tf(syminfo.tickerid, ltf_res, close)
+arr_nq_t  = request.security_lower_tf(nq_id, ltf_res, time)
+arr_nq_o  = request.security_lower_tf(nq_id, ltf_res, open)
+arr_mnq_t = request.security_lower_tf(mnq_id, ltf_res, time)
+arr_mnq_o = request.security_lower_tf(mnq_id, ltf_res, open)
+// Same-TF open for the other contract (reliable on 1m; on HTF this is that TF's open).
+nq_open_tf  = request.security(nq_id,  timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off)
+mnq_open_tf = request.security(mnq_id, timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off)
+bool use_ltf = timeframe.in_seconds() > 60 and not na(arr_t) and array.size(arr_t) > 0
+
+// =========================================================================
+// DATA STRUCTURES
+// =========================================================================
+type Lvl
+    string key_name
+    line l
+    label lbl
+    bool drawn
+    float p
+    int trig_idx
+    int trig_time
+    bool tested
+    int tap_time
+    bool terminated
+
+type Gap
+    string key_name
+    line l_top
+    line l_btm
+    line l_mid
+    box bx
+    label lbl_top
+    label lbl_btm
+    label lbl_mid
+    bool drawn
+    float p_top
+    float p_btm
+    float p_mid
+    int trig_idx
+    int trig_time
+    bool tested_top
+    bool tested_btm
+    bool tested_mid
+    bool tested_box
+    color c
+    bool show_top
+    bool show_btm
+    bool show_mid
+    int tap_time_top
+    int tap_time_btm
+    int tap_time_mid
+    int tap_time_box
+
+var lvl_1800 = Lvl.new("18:00 Open", na, na, false, na, na, na, false, na, false)
+var lvl_1930 = Lvl.new("19:30 Asia", na, na, false, na, na, na, false, na, false)
+var lvl_2200 = Lvl.new("22:00 Open", na, na, false, na, na, na, false, na, false)
+var lvl_0000 = Lvl.new("00:00 Mid",  na, na, false, na, na, na, false, na, false)
+var lvl_0130 = Lvl.new("01:30 Lon",  na, na, false, na, na, na, false, na, false)
+var lvl_0200 = Lvl.new("02:00 Open", na, na, false, na, na, na, false, na, false)
+var lvl_0300 = Lvl.new("03:00 Lon",  na, na, false, na, na, na, false, na, false)
+var lvl_0600 = Lvl.new("06:00 Open", na, na, false, na, na, na, false, na, false)
+var lvl_0730 = Lvl.new("07:30 NY",   na, na, false, na, na, na, false, na, false)
+var lvl_0830 = Lvl.new("08:30 Pre",  na, na, false, na, na, na, false, na, false)
+var lvl_0930 = Lvl.new("09:30 NY",   na, na, false, na, na, na, false, na, false)
+var lvl_1000 = Lvl.new("10:00 Open", na, na, false, na, na, na, false, na, false)
+var lvl_nq_1000  = Lvl.new("NQ 10am",  na, na, false, na, na, na, false, na, false)
+var lvl_mnq_1000 = Lvl.new("MNQ 10am", na, na, false, na, na, na, false, na, false)
+var box[] vi_boxes = array.new_box()
+var box   vi_today = na
+var lvl_c1   = Lvl.new("Custom 1",   na, na, false, na, na, na, false, na, false)
+var lvl_c2   = Lvl.new("Custom 2",   na, na, false, na, na, na, false, na, false)
+var lvl_c3   = Lvl.new("Custom 3",   na, na, false, na, na, na, false, na, false)
+var lvl_wo   = Lvl.new("Weekly",     na, na, false, na, na, na, false, na, false)
+var lvl_two  = Lvl.new("True Wk",   na, na, false, na, na, na, false, na, false)
+var lvl_mo   = Lvl.new("Monthly",    na, na, false, na, na, na, false, na, false)
+var lvl_tmo  = Lvl.new("True Mo",   na, na, false, na, na, na, false, na, false)
+var lvl_pdh  = Lvl.new("PDH",        na, na, false, na, na, na, false, na, false)
+var lvl_pdl  = Lvl.new("PDL",        na, na, false, na, na, na, false, na, false)
+var lvl_ath  = Lvl.new("ATH",        na, na, false, na, na, na, false, na, false)
+var lvl_pwh  = Lvl.new("PWH",        na, na, false, na, na, na, false, na, false)
+var lvl_pwl  = Lvl.new("PWL",        na, na, false, na, na, na, false, na, false)
+
+// Session H/L levels
+var lvl_asia_h = Lvl.new("Asia H",   na, na, false, na, na, na, false, na, false)
+var lvl_asia_l = Lvl.new("Asia L",   na, na, false, na, na, na, false, na, false)
+var lvl_lon_h  = Lvl.new("London H", na, na, false, na, na, na, false, na, false)
+var lvl_lon_l  = Lvl.new("London L", na, na, false, na, na, na, false, na, false)
+var lvl_ny_h   = Lvl.new("NY AM H",  na, na, false, na, na, na, false, na, false)
+var lvl_ny_l   = Lvl.new("NY AM L",  na, na, false, na, na, na, false, na, false)
+var lvl_nypm_h = Lvl.new("NY PM H",  na, na, false, na, na, na, false, na, false)
+var lvl_nypm_l = Lvl.new("NY PM L",  na, na, false, na, na, na, false, na, false)
+
+var gap_ndog = Gap.new("NDOG", na, na, na, na, na, na, na, false, na, na, na, na, na, false, false, false, false, na, false, false, false, na, na, na, na)
+var gap_nwog = Gap.new("NWOG", na, na, na, na, na, na, na, false, na, na, na, na, na, false, false, false, false, na, false, false, false, na, na, na, na)
+
+// =========================================================================
+// LEVEL METHODS
+// =========================================================================
+method wipe_lvl(Lvl obj) =>
+    obj.drawn := false, obj.p := na, obj.trig_idx := na, obj.trig_time := na, obj.tested := false, obj.tap_time := na, obj.terminated := false
+    line.delete(obj.l), label.delete(obj.lbl)
+    int _dummy = 0
+
+method draw_lvl(Lvl obj, string name, color c, float y_val, int x_idx, int real_time, string ln_style) =>
+    line.delete(obj.l), label.delete(obj.lbl)
+    obj.l   := line.new(x_idx, y_val, bar_index, y_val, color=color.new(c, line_transp), style=ln_style, width=line_width)
+    obj.lbl := label.new(bar_index, y_val, text=name, color=color.new(color.white, 100), textcolor=color.new(c, line_transp), style=label.style_label_left, size=l_size)
+    obj.drawn := true, obj.p := y_val, obj.trig_idx := x_idx, obj.trig_time := real_time, obj.tested := false, obj.tap_time := na
+    int _dummy = 0
+
+push_vi_box(int x1, float y1, float y2, color fill_c, color border_c, int width_bars) =>
+    if not na(vi_today)
+        box.delete(vi_today)
+        idx = array.indexof(vi_boxes, vi_today)
+        if idx >= 0
+            array.remove(vi_boxes, idx)
+    box b = box.new(x1, y1, x1 + width_bars, y2, border_color=border_c, bgcolor=fill_c, border_width=1, extend=extend.none)
+    array.push(vi_boxes, b)
+    if array.size(vi_boxes) > 40
+        old = array.shift(vi_boxes)
+        box.delete(old)
+    b
+
+method check_test_lvl(Lvl obj, bool ltf_on, int[] t_arr, float[] h_arr, float[] l_arr) =>
+    // Style change is applied in refresh via per-category "→ Tested" setting
+    if obj.drawn and not obj.tested
+        if ltf_on
+            for i = 0 to array.size(t_arr) - 1
+                t1 = array.get(t_arr, i)
+                h1 = array.get(h_arr, i)
+                l1 = array.get(l_arr, i)
+                if t1 >= obj.trig_time + (test_time_m * 60000) and bar_index >= obj.trig_idx + test_delay
+                    if h1 >= obj.p and l1 <= obj.p
+                        obj.tested := true, obj.tap_time := t1
+                        break
+        if not ltf_on
+            if time >= obj.trig_time + (test_time_m * 60000) and bar_index >= obj.trig_idx + test_delay
+                if high >= obj.p and low <= obj.p
+                    obj.tested := true, obj.tap_time := time
+    int _dummy = 0
+
+// =========================================================================
+// GAP METHODS
+// =========================================================================
+method wipe_gap(Gap obj) =>
+    obj.drawn := false
+    obj.tested_top := false, obj.tested_btm := false, obj.tested_mid := false, obj.tested_box := false
+    obj.tap_time_top := na, obj.tap_time_btm := na, obj.tap_time_mid := na, obj.tap_time_box := na
+    line.delete(obj.l_top), line.delete(obj.l_btm), line.delete(obj.l_mid)
+    box.delete(obj.bx), label.delete(obj.lbl_top), label.delete(obj.lbl_btm), label.delete(obj.lbl_mid)
+    int _dummy = 0
+
+method draw_gap(Gap obj, string name, color c_bull, color c_bear, string style, bool show_mid, bool show_top, bool show_btm, float c_close, float c_open, int x_idx, int real_time, string ln_style) =>
+    obj.wipe_gap()
+    bull = c_open > c_close
+    c = bull ? c_bull : c_bear
+    obj.c := c, obj.show_top := show_top, obj.show_btm := show_btm, obj.show_mid := show_mid
+    max_p = math.max(c_open, c_close)
+    min_p = math.min(c_open, c_close)
+    mid_p = math.avg(max_p, min_p)
+    obj.p_top := max_p, obj.p_btm := min_p, obj.p_mid := mid_p
+    obj.trig_idx := bar_index, obj.trig_time := real_time, obj.drawn := true
+    obj.tap_time_top := na, obj.tap_time_btm := na, obj.tap_time_mid := na, obj.tap_time_box := na
+    show_boxes = style == "Boxes" or style == "Both"
+    show_lines = style == "Lines" or style == "Both"
+    if show_boxes
+        obj.bx := box.new(x_idx, max_p, bar_index, min_p, border_color=na, bgcolor=color.new(c, box_transp))
+    if show_lines
+        if show_top
+            obj.l_top   := line.new(x_idx, max_p, bar_index, max_p, color=color.new(c, line_transp), style=ln_style, width=line_width)
+            obj.lbl_top := label.new(bar_index, max_p, text=name + " Top", color=color.new(color.white, 100), textcolor=color.new(c, line_transp), style=label.style_label_left, size=l_size)
+        if show_btm
+            obj.l_btm   := line.new(x_idx, min_p, bar_index, min_p, color=color.new(c, line_transp), style=ln_style, width=line_width)
+            obj.lbl_btm := label.new(bar_index, min_p, text=name + " Btm", color=color.new(color.white, 100), textcolor=color.new(c, line_transp), style=label.style_label_left, size=l_size)
+        if show_mid
+            // Mid (CE) always dotted so it stays visually distinct from top/bottom
+            obj.l_mid   := line.new(x_idx, mid_p, bar_index, mid_p, color=color.new(c, line_transp), style=line.style_dotted, width=line_width)
+            obj.lbl_mid := label.new(bar_index, mid_p, text=name + " Mid", color=color.new(color.white, 100), textcolor=color.new(c, line_transp), style=label.style_label_left, size=l_size)
+    int _dummy = 0
+
+method check_test_gap(Gap obj, bool ltf_on, int[] t_arr, float[] h_arr, float[] l_arr) =>
+    // Style change is applied in refresh via per-category "→ Tested" setting
+    if obj.drawn
+        if ltf_on
+            for i = 0 to array.size(t_arr) - 1
+                t1 = array.get(t_arr, i)
+                h1 = array.get(h_arr, i)
+                l1 = array.get(l_arr, i)
+                if t1 >= obj.trig_time + (test_time_m * 60000) and bar_index >= obj.trig_idx + test_delay
+                    if not obj.tested_top and h1 >= obj.p_top and l1 <= obj.p_top
+                        obj.tested_top := true, obj.tap_time_top := t1
+                    if not obj.tested_btm and h1 >= obj.p_btm and l1 <= obj.p_btm
+                        obj.tested_btm := true, obj.tap_time_btm := t1
+                    if not obj.tested_mid and h1 >= obj.p_mid and l1 <= obj.p_mid
+                        obj.tested_mid := true, obj.tap_time_mid := t1
+                    if not obj.tested_box and h1 >= obj.p_btm and l1 <= obj.p_top
+                        obj.tested_box := true, obj.tap_time_box := t1
+                        if mark_tested and not na(obj.bx)
+                            box.set_bgcolor(obj.bx, color.new(obj.c, 95))
+        if not ltf_on
+            if time >= obj.trig_time + (test_time_m * 60000) and bar_index >= obj.trig_idx + test_delay
+                if not obj.tested_top and high >= obj.p_top and low <= obj.p_top
+                    obj.tested_top := true, obj.tap_time_top := time
+                if not obj.tested_btm and high >= obj.p_btm and low <= obj.p_btm
+                    obj.tested_btm := true, obj.tap_time_btm := time
+                if not obj.tested_mid and high >= obj.p_mid and low <= obj.p_mid
+                    obj.tested_mid := true, obj.tap_time_mid := time
+                if not obj.tested_box and high >= obj.p_btm and low <= obj.p_top
+                    obj.tested_box := true, obj.tap_time_box := time
+                    if mark_tested and not na(obj.bx)
+                        box.set_bgcolor(obj.bx, color.new(obj.c, 95))
+    int _dummy = 0
+
+// =========================================================================
+// 1M DATA TRACKERS
+// =========================================================================
+var float last_1m_c    = na
+var float prev_session_c = na
+var float prev_week_c  = na
+
+if use_ltf and array.size(arr_c) > 0
+    last_1m_c := array.get(arr_c, array.size(arr_c) - 1)
+if not use_ltf
+    last_1m_c := close
+
+var float ath_running = na
+var int   ath_idx     = na
+
+h_bar = use_ltf ? array.max(arr_h) : high
+if na(ath_running) or h_bar > ath_running
+    ath_running := h_bar
+    ath_idx     := bar_index
+    if show_ath
+        lvl_ath.draw_lvl(txt_ath, c_ath_in, ath_running, ath_idx, time, ls_prev)
+
+var float cur_dh     = na
+var int   cur_dh_idx = na
+var float cur_dl     = na
+var int   cur_dl_idx = na
+
+var float cur_wh     = na
+var int   cur_wh_idx = na
+var float cur_wl     = na
+var int   cur_wl_idx = na
+
+// =========================================================================
+// SESSION SWEEPS
+// =========================================================================
+shift_ms      = (24 - reset_hr) * 3600000
+session_day   = dayofmonth(time + shift_ms, tz)
+is_new_session = session_day != nz(session_day[1], session_day)
+session_week  = weekofyear(time + shift_ms, tz)
+is_new_week   = session_week != nz(session_week[1], session_week)
+
+if is_new_session
+    if show_pdh and not na(cur_dh)
+        lvl_pdh.draw_lvl(txt_pdh, c_pdh_in, cur_dh, cur_dh_idx, time, ls_prev)
+    if show_pdl and not na(cur_dl)
+        lvl_pdl.draw_lvl(txt_pdl, c_pdl_in, cur_dl, cur_dl_idx, time, ls_prev)
+    cur_dh := use_ltf ? array.max(arr_h) : high
+    cur_dh_idx := bar_index
+    cur_dl := use_ltf ? array.min(arr_l) : low
+    cur_dl_idx := bar_index
+    prev_session_c := nz(last_1m_c[1], close[1])
+    lvl_1800.wipe_lvl(), lvl_1930.wipe_lvl(), lvl_2200.wipe_lvl(), lvl_0000.wipe_lvl(), lvl_0130.wipe_lvl(), lvl_0200.wipe_lvl()
+    lvl_0300.wipe_lvl(), lvl_0600.wipe_lvl(), lvl_0730.wipe_lvl(), lvl_0830.wipe_lvl(), lvl_0930.wipe_lvl(), lvl_1000.wipe_lvl()
+    lvl_nq_1000.wipe_lvl(), lvl_mnq_1000.wipe_lvl()
+    lvl_c1.wipe_lvl(), lvl_c2.wipe_lvl(), lvl_c3.wipe_lvl()
+    lvl_asia_h.wipe_lvl(), lvl_asia_l.wipe_lvl()
+    lvl_lon_h.wipe_lvl(),  lvl_lon_l.wipe_lvl()
+    lvl_ny_h.wipe_lvl(),   lvl_ny_l.wipe_lvl()
+    lvl_nypm_h.wipe_lvl(), lvl_nypm_l.wipe_lvl()
+    vi_today := na
+    float gap_open = use_ltf ? array.get(arr_o, 0) : open
+    int   gap_time = use_ltf ? array.get(arr_t, 0) : time
+    if show_ndog and gap_open != prev_session_c
+        gap_ndog.draw_gap(txt_ndog, c_ndog_bl, c_ndog_br, ndog_style, ndog_mid, show_ndog_top, show_ndog_btm, prev_session_c, gap_open, bar_index, gap_time, ls_ndog)
+else
+    h_val = use_ltf ? array.max(arr_h) : high
+    l_val = use_ltf ? array.min(arr_l) : low
+    if na(cur_dh) or h_val > cur_dh
+        cur_dh := h_val, cur_dh_idx := bar_index
+    if na(cur_dl) or l_val < cur_dl
+        cur_dl := l_val, cur_dl_idx := bar_index
+
+if is_new_week
+    prev_week_c := nz(last_1m_c[1], close[1])
+    float gap_w_open = use_ltf ? array.get(arr_o, 0) : open
+    int   gap_w_time = use_ltf ? array.get(arr_t, 0) : time
+    if show_nwog and gap_w_open != prev_week_c
+        gap_nwog.draw_gap(txt_nwog, c_nwog_bl, c_nwog_br, nwog_style, nwog_mid, show_nwog_top, show_nwog_btm, prev_week_c, gap_w_open, bar_index, gap_w_time, ls_nwog)
+    if show_pwh and not na(cur_wh)
+        lvl_pwh.draw_lvl(txt_pwh, c_pwh_in, cur_wh, cur_wh_idx, time, ls_prev)
+    if show_pwl and not na(cur_wl)
+        lvl_pwl.draw_lvl(txt_pwl, c_pwl_in, cur_wl, cur_wl_idx, time, ls_prev)
+    cur_wh := use_ltf ? array.max(arr_h) : high
+    cur_wh_idx := bar_index
+    cur_wl := use_ltf ? array.min(arr_l) : low
+    cur_wl_idx := bar_index
+else
+    w_h_val = use_ltf ? array.max(arr_h) : high
+    w_l_val = use_ltf ? array.min(arr_l) : low
+    if na(cur_wh) or w_h_val > cur_wh
+        cur_wh := w_h_val, cur_wh_idx := bar_index
+    if na(cur_wl) or w_l_val < cur_wl
+        cur_wl := w_l_val, cur_wl_idx := bar_index
+
+// =========================================================================
+// SESSION HIGHS & LOWS TRACKING
+// =========================================================================
+// Per-bar H/L from LTF or current bar
+bar_h_val = use_ltf ? array.max(arr_h) : high
+bar_l_val = use_ltf ? array.min(arr_l) : low
+
+// Helper: draw/update a session H or L level only when the price has changed.
+// The left anchor is the bar where that specific H or L was set, so lines don't backfill.
+sess_draw_if_changed(Lvl obj, bool show_lvl, string lbl, color c, float new_p, float prev_p, int hl_idx, int hl_time) =>
+    if show_lvl and (na(prev_p) or new_p != prev_p)
+        obj.draw_lvl(lbl, c, new_p, hl_idx, hl_time, ls_sess)
+    int _dummy = 0
+
+// --- Asia ---
+var float asia_rh      = na
+var float asia_prev_rh = na
+var int   asia_rh_idx  = na
+var int   asia_rh_time = na
+var float asia_rl      = na
+var float asia_prev_rl = na
+var int   asia_rl_idx  = na
+var int   asia_rl_time = na
+var bool  in_asia_prev = false
+
+in_asia = not na(time(timeframe.period, asia_session, tz))
+
+if show_asia_hl
+    if in_asia and not in_asia_prev
+        asia_rh := bar_h_val, asia_rh_idx := bar_index, asia_rh_time := time
+        asia_rl := bar_l_val, asia_rl_idx := bar_index, asia_rl_time := time
+        asia_prev_rh := na, asia_prev_rl := na
+        sess_draw_if_changed(lvl_asia_h, show_asia_h, txt_asia_h, c_asia_h_in, asia_rh, asia_prev_rh, asia_rh_idx, asia_rh_time)
+        sess_draw_if_changed(lvl_asia_l, show_asia_l, txt_asia_l, c_asia_l_in, asia_rl, asia_prev_rl, asia_rl_idx, asia_rl_time)
+        asia_prev_rh := asia_rh, asia_prev_rl := asia_rl
+    else if in_asia
+        if bar_h_val > nz(asia_rh, bar_h_val)
+            asia_rh := bar_h_val, asia_rh_idx := bar_index, asia_rh_time := time
+        if bar_l_val < nz(asia_rl, bar_l_val)
+            asia_rl := bar_l_val, asia_rl_idx := bar_index, asia_rl_time := time
+        sess_draw_if_changed(lvl_asia_h, show_asia_h, txt_asia_h, c_asia_h_in, asia_rh, asia_prev_rh, asia_rh_idx, asia_rh_time)
+        sess_draw_if_changed(lvl_asia_l, show_asia_l, txt_asia_l, c_asia_l_in, asia_rl, asia_prev_rl, asia_rl_idx, asia_rl_time)
+        asia_prev_rh := asia_rh, asia_prev_rl := asia_rl
+
+in_asia_prev := in_asia
+
+// Freeze Asia lines when taken out (only checked while session is inactive)
+if sess_freeze_taken and not in_asia
+    if lvl_asia_h.drawn and not lvl_asia_h.terminated and bar_h_val > lvl_asia_h.p
+        lvl_asia_h.terminated := true
+        if not na(lvl_asia_h.l)
+            line.set_x2(lvl_asia_h.l, bar_index)
+        if not na(lvl_asia_h.lbl)
+            label.set_xy(lvl_asia_h.lbl, bar_index, lvl_asia_h.p)
+            label.set_style(lvl_asia_h.lbl, label.style_label_lower_right)
+    if lvl_asia_l.drawn and not lvl_asia_l.terminated and bar_l_val < lvl_asia_l.p
+        lvl_asia_l.terminated := true
+        if not na(lvl_asia_l.l)
+            line.set_x2(lvl_asia_l.l, bar_index)
+        if not na(lvl_asia_l.lbl)
+            label.set_xy(lvl_asia_l.lbl, bar_index, lvl_asia_l.p)
+            label.set_style(lvl_asia_l.lbl, label.style_label_upper_right)
+
+// --- London ---
+var float lon_rh      = na
+var float lon_prev_rh = na
+var int   lon_rh_idx  = na
+var int   lon_rh_time = na
+var float lon_rl      = na
+var float lon_prev_rl = na
+var int   lon_rl_idx  = na
+var int   lon_rl_time = na
+var bool  in_lon_prev = false
+
+in_lon = not na(time(timeframe.period, lon_session, tz))
+
+if show_lon_hl
+    if in_lon and not in_lon_prev
+        lon_rh := bar_h_val, lon_rh_idx := bar_index, lon_rh_time := time
+        lon_rl := bar_l_val, lon_rl_idx := bar_index, lon_rl_time := time
+        lon_prev_rh := na, lon_prev_rl := na
+        sess_draw_if_changed(lvl_lon_h, show_lon_h, txt_lon_h, c_lon_h_in, lon_rh, lon_prev_rh, lon_rh_idx, lon_rh_time)
+        sess_draw_if_changed(lvl_lon_l, show_lon_l, txt_lon_l, c_lon_l_in, lon_rl, lon_prev_rl, lon_rl_idx, lon_rl_time)
+        lon_prev_rh := lon_rh, lon_prev_rl := lon_rl
+    else if in_lon
+        if bar_h_val > nz(lon_rh, bar_h_val)
+            lon_rh := bar_h_val, lon_rh_idx := bar_index, lon_rh_time := time
+        if bar_l_val < nz(lon_rl, bar_l_val)
+            lon_rl := bar_l_val, lon_rl_idx := bar_index, lon_rl_time := time
+        sess_draw_if_changed(lvl_lon_h, show_lon_h, txt_lon_h, c_lon_h_in, lon_rh, lon_prev_rh, lon_rh_idx, lon_rh_time)
+        sess_draw_if_changed(lvl_lon_l, show_lon_l, txt_lon_l, c_lon_l_in, lon_rl, lon_prev_rl, lon_rl_idx, lon_rl_time)
+        lon_prev_rh := lon_rh, lon_prev_rl := lon_rl
+
+in_lon_prev := in_lon
+
+// Freeze London lines when taken out
+if sess_freeze_taken and not in_lon
+    if lvl_lon_h.drawn and not lvl_lon_h.terminated and bar_h_val > lvl_lon_h.p
+        lvl_lon_h.terminated := true
+        if not na(lvl_lon_h.l)
+            line.set_x2(lvl_lon_h.l, bar_index)
+        if not na(lvl_lon_h.lbl)
+            label.set_xy(lvl_lon_h.lbl, bar_index, lvl_lon_h.p)
+            label.set_style(lvl_lon_h.lbl, label.style_label_lower_right)
+    if lvl_lon_l.drawn and not lvl_lon_l.terminated and bar_l_val < lvl_lon_l.p
+        lvl_lon_l.terminated := true
+        if not na(lvl_lon_l.l)
+            line.set_x2(lvl_lon_l.l, bar_index)
+        if not na(lvl_lon_l.lbl)
+            label.set_xy(lvl_lon_l.lbl, bar_index, lvl_lon_l.p)
+            label.set_style(lvl_lon_l.lbl, label.style_label_upper_right)
+
+// --- New York ---
+var float ny_rh      = na
+var float ny_prev_rh = na
+var int   ny_rh_idx  = na
+var int   ny_rh_time = na
+var float ny_rl      = na
+var float ny_prev_rl = na
+var int   ny_rl_idx  = na
+var int   ny_rl_time = na
+var bool  in_ny_prev = false
+
+in_ny = not na(time(timeframe.period, ny_session, tz))
+
+if show_ny_hl
+    if in_ny and not in_ny_prev
+        ny_rh := bar_h_val, ny_rh_idx := bar_index, ny_rh_time := time
+        ny_rl := bar_l_val, ny_rl_idx := bar_index, ny_rl_time := time
+        ny_prev_rh := na, ny_prev_rl := na
+        sess_draw_if_changed(lvl_ny_h, show_ny_h, txt_ny_h, c_ny_h_in, ny_rh, ny_prev_rh, ny_rh_idx, ny_rh_time)
+        sess_draw_if_changed(lvl_ny_l, show_ny_l, txt_ny_l, c_ny_l_in, ny_rl, ny_prev_rl, ny_rl_idx, ny_rl_time)
+        ny_prev_rh := ny_rh, ny_prev_rl := ny_rl
+    else if in_ny
+        if bar_h_val > nz(ny_rh, bar_h_val)
+            ny_rh := bar_h_val, ny_rh_idx := bar_index, ny_rh_time := time
+        if bar_l_val < nz(ny_rl, bar_l_val)
+            ny_rl := bar_l_val, ny_rl_idx := bar_index, ny_rl_time := time
+        sess_draw_if_changed(lvl_ny_h, show_ny_h, txt_ny_h, c_ny_h_in, ny_rh, ny_prev_rh, ny_rh_idx, ny_rh_time)
+        sess_draw_if_changed(lvl_ny_l, show_ny_l, txt_ny_l, c_ny_l_in, ny_rl, ny_prev_rl, ny_rl_idx, ny_rl_time)
+        ny_prev_rh := ny_rh, ny_prev_rl := ny_rl
+
+in_ny_prev := in_ny
+
+// Freeze NY AM lines when taken out
+if sess_freeze_taken and not in_ny
+    if lvl_ny_h.drawn and not lvl_ny_h.terminated and bar_h_val > lvl_ny_h.p
+        lvl_ny_h.terminated := true
+        if not na(lvl_ny_h.l)
+            line.set_x2(lvl_ny_h.l, bar_index)
+        if not na(lvl_ny_h.lbl)
+            label.set_xy(lvl_ny_h.lbl, bar_index, lvl_ny_h.p)
+            label.set_style(lvl_ny_h.lbl, label.style_label_lower_right)
+    if lvl_ny_l.drawn and not lvl_ny_l.terminated and bar_l_val < lvl_ny_l.p
+        lvl_ny_l.terminated := true
+        if not na(lvl_ny_l.l)
+            line.set_x2(lvl_ny_l.l, bar_index)
+        if not na(lvl_ny_l.lbl)
+            label.set_xy(lvl_ny_l.lbl, bar_index, lvl_ny_l.p)
+            label.set_style(lvl_ny_l.lbl, label.style_label_upper_right)
+
+// --- New York PM ---
+var float nypm_rh      = na
+var float nypm_prev_rh = na
+var int   nypm_rh_idx  = na
+var int   nypm_rh_time = na
+var float nypm_rl      = na
+var float nypm_prev_rl = na
+var int   nypm_rl_idx  = na
+var int   nypm_rl_time = na
+var bool  in_nypm_prev = false
+
+in_nypm = not na(time(timeframe.period, nypm_session, tz))
+
+if show_nypm_hl
+    if in_nypm and not in_nypm_prev
+        nypm_rh := bar_h_val, nypm_rh_idx := bar_index, nypm_rh_time := time
+        nypm_rl := bar_l_val, nypm_rl_idx := bar_index, nypm_rl_time := time
+        nypm_prev_rh := na, nypm_prev_rl := na
+        sess_draw_if_changed(lvl_nypm_h, show_nypm_h, txt_nypm_h, c_nypm_h_in, nypm_rh, nypm_prev_rh, nypm_rh_idx, nypm_rh_time)
+        sess_draw_if_changed(lvl_nypm_l, show_nypm_l, txt_nypm_l, c_nypm_l_in, nypm_rl, nypm_prev_rl, nypm_rl_idx, nypm_rl_time)
+        nypm_prev_rh := nypm_rh, nypm_prev_rl := nypm_rl
+    else if in_nypm
+        if bar_h_val > nz(nypm_rh, bar_h_val)
+            nypm_rh := bar_h_val, nypm_rh_idx := bar_index, nypm_rh_time := time
+        if bar_l_val < nz(nypm_rl, bar_l_val)
+            nypm_rl := bar_l_val, nypm_rl_idx := bar_index, nypm_rl_time := time
+        sess_draw_if_changed(lvl_nypm_h, show_nypm_h, txt_nypm_h, c_nypm_h_in, nypm_rh, nypm_prev_rh, nypm_rh_idx, nypm_rh_time)
+        sess_draw_if_changed(lvl_nypm_l, show_nypm_l, txt_nypm_l, c_nypm_l_in, nypm_rl, nypm_prev_rl, nypm_rl_idx, nypm_rl_time)
+        nypm_prev_rh := nypm_rh, nypm_prev_rl := nypm_rl
+
+in_nypm_prev := in_nypm
+
+// Freeze NY PM lines when taken out
+if sess_freeze_taken and not in_nypm
+    if lvl_nypm_h.drawn and not lvl_nypm_h.terminated and bar_h_val > lvl_nypm_h.p
+        lvl_nypm_h.terminated := true
+        if not na(lvl_nypm_h.l)
+            line.set_x2(lvl_nypm_h.l, bar_index)
+        if not na(lvl_nypm_h.lbl)
+            label.set_xy(lvl_nypm_h.lbl, bar_index, lvl_nypm_h.p)
+            label.set_style(lvl_nypm_h.lbl, label.style_label_lower_right)
+    if lvl_nypm_l.drawn and not lvl_nypm_l.terminated and bar_l_val < lvl_nypm_l.p
+        lvl_nypm_l.terminated := true
+        if not na(lvl_nypm_l.l)
+            line.set_x2(lvl_nypm_l.l, bar_index)
+        if not na(lvl_nypm_l.lbl)
+            label.set_xy(lvl_nypm_l.lbl, bar_index, lvl_nypm_l.p)
+            label.set_style(lvl_nypm_l.lbl, label.style_label_upper_right)
+
+get_10am_chart_prints(int t_target, bool ltf_on, int[] t_arr, float[] o_arr, float[] c_arr, float prev_bar_last_1m) =>
+    float o10 = na
+    float pc  = na
+    if ltf_on and not na(t_arr) and array.size(t_arr) > 0
+        for i = 0 to array.size(t_arr) - 1
+            t1 = array.get(t_arr, i)
+            if t1 >= t_target
+                o10 := array.get(o_arr, i)
+                pc  := i > 0 ? array.get(c_arr, i - 1) : prev_bar_last_1m
+                break
+    else
+        o10 := open
+        pc  := close[1]
+    [o10, pc]
+
+// Exact 10:00 NY 1m open from LTF arrays. Do not take 10:01+ (that prints a few ticks off).
+get_open_at_1000(int[] t_arr, float[] o_arr, float fallback) =>
+    float o_ret = na
+    if not na(t_arr) and array.size(t_arr) > 0
+        for i = 0 to array.size(t_arr) - 1
+            t1 = array.get(t_arr, i)
+            if hour(t1, tz) == 10 and minute(t1) == 0
+                o_ret := array.get(o_arr, i)
+                break
+    na(o_ret) ? fallback : o_ret
+
+// =========================================================================
+// TIMING TRIGGERS
+// =========================================================================
+check_daily_trig(Lvl obj, bool show, string name, color c, int h, int m, bool ltf_on, int[] t_arr, float[] o_arr) =>
+    if show
+        t_target   = timestamp(tz, year(time, tz), month(time, tz), dayofmonth(time, tz), h, m, 0)
+        is_inside  = (t_target >= time and t_target < time_close)
+        is_gap_cross = (time > t_target) and (nz(time[1], time) < t_target) and ((time - t_target) <= 14400000)
+        if (is_inside or is_gap_cross) and (na(obj.trig_time) or obj.trig_time != t_target)
+            if ltf_on
+                for i = 0 to array.size(t_arr) - 1
+                    t1 = array.get(t_arr, i)
+                    if t1 >= t_target
+                        obj.draw_lvl(name, c, array.get(o_arr, i), bar_index, t1, ls_key)
+                        obj.trig_time := t_target
+                        break
+            if not ltf_on
+                obj.draw_lvl(name, c, open, bar_index, time, ls_key)
+                obj.trig_time := t_target
+    int _dummy = 0
+
+check_daily_trig(lvl_1800, show_1800, txt_1800, c_1800_in, 18, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_1930, show_1930, txt_1930, c_1930_in, 19, 30, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_2200, show_2200, txt_2200, c_2200_in, 22, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0000, show_0000, txt_0000, c_0000_in, 00, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0130, show_0130, txt_0130, c_0130_in, 01, 30, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0200, show_0200, txt_0200, c_0200_in, 02, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0300, show_0300, txt_0300, c_0300_in, 03, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0600, show_0600, txt_0600, c_0600_in, 06, 00, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0730, show_0730, txt_0730, c_0730_in, 07, 30, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0830, show_0830, txt_0830, c_0830_in, 08, 30, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_0930, show_0930, txt_0930, c_0930_in, 09, 30, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_1000, show_1000, txt_1000, c_1000_in, 10, 00, use_ltf, arr_t, arr_o)
+
+var int vi_trig_time = na
+t_10 = timestamp(tz, year(time, tz), month(time, tz), dayofmonth(time, tz), 10, 00, 0)
+is_10_inside = (t_10 >= time and t_10 < time_close)
+is_10_gap    = (time > t_10) and (nz(time[1], time) < t_10) and ((time - t_10) <= 14400000)
+is_10_fire   = (is_10_inside or is_10_gap) and (na(vi_trig_time) or vi_trig_time != t_10)
+
+if is_10_fire
+    [open_10, prev_c] = get_10am_chart_prints(t_10, use_ltf, arr_t, arr_o, arr_c, last_1m_c[1])
+    vi_trig_time := t_10
+    if show_1000_vi and not na(open_10) and not na(prev_c)
+        gap_ticks = math.abs(open_10 - prev_c) / syminfo.mintick
+        if gap_ticks >= vi_min_ticks and open_10 != prev_c
+            bull = open_10 > prev_c
+            fill_c = color.new(bull ? c_1000_vi_bl : c_1000_vi_br, vi_transp)
+            bord_c = color.new(bull ? c_1000_vi_bl : c_1000_vi_br, math.max(0, vi_transp - 20))
+            vi_today := push_vi_box(bar_index, math.max(open_10, prev_c), math.min(open_10, prev_c), fill_c, bord_c, vi_width_bars)
+    float nq_px  = na
+    float mnq_px = na
+    if is_nasdaq_fut and not na(open_10)
+        nq_px  := is_nq_chart  ? open_10 : get_open_at_1000(arr_nq_t,  arr_nq_o,  nq_open_tf)
+        mnq_px := is_mnq_chart ? open_10 : get_open_at_1000(arr_mnq_t, arr_mnq_o, mnq_open_tf)
+        tick = syminfo.mintick
+        differ_ok = not only_nq_mnq_diff or (not na(nq_px) and not na(mnq_px) and math.abs(nq_px - mnq_px) >= nq_mnq_diff_ticks * tick)
+        if only_nq_mnq_diff and (na(nq_px) or na(mnq_px))
+            differ_ok := false
+        if show_nq_1000 and not na(nq_px) and differ_ok
+            lvl_nq_1000.draw_lvl(txt_nq_1000, c_nq_1000_in, nq_px, bar_index, t_10, ls_key)
+        if show_mnq_1000 and not na(mnq_px) and differ_ok
+            lvl_mnq_1000.draw_lvl(txt_mnq_1000, c_mnq_1000_in, mnq_px, bar_index, t_10, ls_key)
+
+check_daily_trig(lvl_c1, show_c1, txt_c1, c_c1_in, c1_h, c1_m, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_c2, show_c2, txt_c2, c_c2_in, c2_h, c2_m, use_ltf, arr_t, arr_o)
+check_daily_trig(lvl_c3, show_c3, txt_c3, c_c3_in, c3_h, c3_m, use_ltf, arr_t, arr_o)
+
+if show_wo and weekofyear(time, tz) != weekofyear(nz(time[1], time), tz)
+    if na(lvl_wo.trig_time) or weekofyear(lvl_wo.trig_time, tz) != weekofyear(time, tz)
+        lvl_wo.draw_lvl(txt_wo, c_wo_in, use_ltf ? array.get(arr_o, 0) : open, bar_index, use_ltf ? array.get(arr_t, 0) : time, ls_wm)
+        lvl_wo.trig_time := time
+
+var int last_two_week = na
+if show_two
+    t_target   = timestamp(tz, year(time, tz), month(time, tz), dayofmonth(time, tz), 9, 30, 0)
+    is_inside  = (t_target >= time and t_target < time_close)
+    is_gap_cross = (time > t_target) and (nz(time[1], time) < t_target) and (time - t_target <= 14400000)
+    if (is_inside or is_gap_cross) and (na(last_two_week) or last_two_week != weekofyear(time, tz))
+        if use_ltf
+            for i = 0 to array.size(arr_t) - 1
+                t1 = array.get(arr_t, i)
+                if t1 >= t_target
+                    lvl_two.draw_lvl(txt_two, c_two_in, array.get(arr_o, i), bar_index, t1, ls_wm)
+                    last_two_week := weekofyear(time, tz)
+                    break
+        if not use_ltf
+            if time >= t_target
+                lvl_two.draw_lvl(txt_two, c_two_in, open, bar_index, time, ls_wm)
+                last_two_week := weekofyear(time, tz)
+
+if show_mo and month(time, tz) != month(nz(time[1], time), tz)
+    if na(lvl_mo.trig_time) or month(lvl_mo.trig_time, tz) != month(time, tz)
+        lvl_mo.draw_lvl(txt_mo, c_mo_in, use_ltf ? array.get(arr_o, 0) : open, bar_index, use_ltf ? array.get(arr_t, 0) : time, ls_wm)
+        lvl_mo.trig_time := time
+
+var int last_tmo_month = na
+if show_tmo
+    t_target   = timestamp(tz, year(time, tz), month(time, tz), dayofmonth(time, tz), 9, 30, 0)
+    is_inside  = (t_target >= time and t_target < time_close)
+    is_gap_cross = (time > t_target) and (nz(time[1], time) < t_target) and (time - t_target <= 14400000)
+    if (is_inside or is_gap_cross) and (na(last_tmo_month) or last_tmo_month != month(time, tz))
+        if use_ltf
+            for i = 0 to array.size(arr_t) - 1
+                t1 = array.get(arr_t, i)
+                if t1 >= t_target
+                    lvl_tmo.draw_lvl(txt_tmo, c_tmo_in, array.get(arr_o, i), bar_index, t1, ls_wm)
+                    last_tmo_month := month(time, tz)
+                    break
+        if not use_ltf
+            if time >= t_target
+                lvl_tmo.draw_lvl(txt_tmo, c_tmo_in, open, bar_index, time, ls_wm)
+                last_tmo_month := month(time, tz)
+
+// =========================================================================
+// RUBBER-BAND & REFRESH
+// =========================================================================
+var float[] active_ys = array.new_float()
+array.clear(active_ys)
+
+get_stagger(float y_val) =>
+    int stagger = 0
+    for y in active_ys
+        if math.abs(y - y_val) <= (overlap_ticks * syminfo.mintick)
+            stagger += 1
+    array.push(active_ys, y_val)
+    stagger
+
+method refresh_lvl(Lvl obj, string name, string cat_style, string test_str) =>
+    if obj.drawn
+        bool is_hidden = hide_lvls and obj.tested
+        if is_hidden
+            line.delete(obj.l), label.delete(obj.lbl)
+            obj.l := na, obj.lbl := na
+        if not is_hidden
+            stagger  = get_stagger(obj.p)
+            final_x  = bar_index + lbl_dist + (stagger * stagger_bars)
+            p_str    = show_price_lbl ? " [" + str.tostring(obj.p, format.mintick) + "]" : ""
+            final_name = (mark_tested and obj.tested) ? name + p_str + test_text : name + p_str
+            // Alternate above/below line for overlapping labels so they don't pile up
+            lbl_style = stagger == 0 ? label.style_label_left : stagger % 2 == 1 ? label.style_label_lower_left : label.style_label_upper_left
+            // Only extend if not frozen (terminated session levels stay where price took them out)
+            if not obj.terminated
+                if not na(obj.l)
+                    line.set_x2(obj.l, final_x)
+            if not na(obj.l)
+                line.set_style(obj.l, active_lstyle(obj.tested, cat_style, test_str))
+            if not obj.terminated
+                if not na(obj.lbl)
+                    label.set_xy(obj.lbl, final_x, obj.p)
+            if not na(obj.lbl)
+                label.set_text(obj.lbl, final_name)
+                if not obj.terminated
+                    label.set_style(obj.lbl, lbl_style)
+    int _dummy = 0
+
+method refresh_gap(Gap obj, string name, string cat_style, string test_str) =>
+    if obj.drawn
+        final_x  = bar_index + lbl_dist
+        bool hide_bx = hide_gaps and obj.tested_box
+        if hide_bx and not na(obj.bx)
+            box.delete(obj.bx), obj.bx := na
+        if not hide_bx and not na(obj.bx)
+            box.set_right(obj.bx, final_x)
+        if obj.show_top
+            bool hide_top = hide_gaps and obj.tested_top
+            if hide_top
+                line.delete(obj.l_top), label.delete(obj.lbl_top)
+                obj.l_top := na, obj.lbl_top := na
+            if not hide_top
+                stagger_top  = get_stagger(obj.p_top)
+                final_x_top  = bar_index + lbl_dist + (stagger_top * stagger_bars)
+                p_str        = show_price_lbl ? " [" + str.tostring(obj.p_top, format.mintick) + "]" : ""
+                final_name   = (mark_tested and obj.tested_top) ? name + " Top" + p_str + test_text : name + " Top" + p_str
+                if not na(obj.l_top)
+                    line.set_x2(obj.l_top, final_x_top)
+                    line.set_style(obj.l_top, active_lstyle(obj.tested_top, cat_style, test_str))
+                if not na(obj.lbl_top)
+                    label.set_xy(obj.lbl_top, final_x_top, obj.p_top)
+                    label.set_text(obj.lbl_top, final_name)
+        if obj.show_btm
+            bool hide_btm = hide_gaps and obj.tested_btm
+            if hide_btm
+                line.delete(obj.l_btm), label.delete(obj.lbl_btm)
+                obj.l_btm := na, obj.lbl_btm := na
+            if not hide_btm
+                stagger_btm  = get_stagger(obj.p_btm)
+                final_x_btm  = bar_index + lbl_dist + (stagger_btm * stagger_bars)
+                p_str        = show_price_lbl ? " [" + str.tostring(obj.p_btm, format.mintick) + "]" : ""
+                final_name   = (mark_tested and obj.tested_btm) ? name + " Btm" + p_str + test_text : name + " Btm" + p_str
+                if not na(obj.l_btm)
+                    line.set_x2(obj.l_btm, final_x_btm)
+                    line.set_style(obj.l_btm, active_lstyle(obj.tested_btm, cat_style, test_str))
+                if not na(obj.lbl_btm)
+                    label.set_xy(obj.lbl_btm, final_x_btm, obj.p_btm)
+                    label.set_text(obj.lbl_btm, final_name)
+        if obj.show_mid
+            bool hide_mid = hide_gaps and obj.tested_mid
+            if hide_mid
+                line.delete(obj.l_mid), label.delete(obj.lbl_mid)
+                obj.l_mid := na, obj.lbl_mid := na
+            if not hide_mid
+                stagger_mid  = get_stagger(obj.p_mid)
+                final_x_mid  = bar_index + lbl_dist + (stagger_mid * stagger_bars)
+                p_str        = show_price_lbl ? " [" + str.tostring(obj.p_mid, format.mintick) + "]" : ""
+                final_name   = (mark_tested and obj.tested_mid) ? name + " Mid" + p_str + test_text : name + " Mid" + p_str
+                if not na(obj.l_mid)
+                    line.set_x2(obj.l_mid, final_x_mid)
+                    // Mid always dotted unless this category's tested style overrides
+                    line.set_style(obj.l_mid, active_lstyle(obj.tested_mid, line.style_dotted, test_str))
+                if not na(obj.lbl_mid)
+                    label.set_xy(obj.lbl_mid, final_x_mid, obj.p_mid)
+                    label.set_text(obj.lbl_mid, final_name)
+    int _dummy = 0
+
+lvl_1800.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_1930.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_2200.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_0000.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_0130.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_0200.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_0300.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_0600.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_0730.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_0830.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_0930.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_1000.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_nq_1000.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_mnq_1000.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_c1.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_c2.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_c3.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_wo.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_two.check_test_lvl(use_ltf, arr_t, arr_h, arr_l),  lvl_mo.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_tmo.check_test_lvl(use_ltf, arr_t, arr_h, arr_l),  lvl_pdh.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_pdl.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_ath.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_pwh.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_pwl.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_asia_h.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_asia_l.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_lon_h.check_test_lvl(use_ltf, arr_t, arr_h, arr_l),  lvl_lon_l.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_ny_h.check_test_lvl(use_ltf, arr_t, arr_h, arr_l),   lvl_ny_l.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+lvl_nypm_h.check_test_lvl(use_ltf, arr_t, arr_h, arr_l), lvl_nypm_l.check_test_lvl(use_ltf, arr_t, arr_h, arr_l)
+gap_ndog.check_test_gap(use_ltf, arr_t, arr_h, arr_l), gap_nwog.check_test_gap(use_ltf, arr_t, arr_h, arr_l)
+
+lvl_1800.refresh_lvl(txt_1800, ls_key, ls_key_test_str), lvl_1930.refresh_lvl(txt_1930, ls_key, ls_key_test_str), lvl_2200.refresh_lvl(txt_2200, ls_key, ls_key_test_str), lvl_0000.refresh_lvl(txt_0000, ls_key, ls_key_test_str)
+lvl_0130.refresh_lvl(txt_0130, ls_key, ls_key_test_str), lvl_0200.refresh_lvl(txt_0200, ls_key, ls_key_test_str), lvl_0300.refresh_lvl(txt_0300, ls_key, ls_key_test_str)
+lvl_0600.refresh_lvl(txt_0600, ls_key, ls_key_test_str), lvl_0730.refresh_lvl(txt_0730, ls_key, ls_key_test_str), lvl_0830.refresh_lvl(txt_0830, ls_key, ls_key_test_str)
+lvl_0930.refresh_lvl(txt_0930, ls_key, ls_key_test_str), lvl_1000.refresh_lvl(txt_1000, ls_key, ls_key_test_str)
+lvl_nq_1000.refresh_lvl(txt_nq_1000, ls_key, ls_key_test_str)
+lvl_mnq_1000.refresh_lvl(txt_mnq_1000, ls_key, ls_key_test_str)
+lvl_c1.refresh_lvl(txt_c1, ls_key, ls_key_test_str), lvl_c2.refresh_lvl(txt_c2, ls_key, ls_key_test_str), lvl_c3.refresh_lvl(txt_c3, ls_key, ls_key_test_str)
+lvl_wo.refresh_lvl(txt_wo, ls_wm, ls_wm_test_str), lvl_two.refresh_lvl(txt_two, ls_wm, ls_wm_test_str), lvl_mo.refresh_lvl(txt_mo, ls_wm, ls_wm_test_str), lvl_tmo.refresh_lvl(txt_tmo, ls_wm, ls_wm_test_str)
+lvl_pdh.refresh_lvl(txt_pdh, ls_prev, ls_prev_test_str), lvl_pdl.refresh_lvl(txt_pdl, ls_prev, ls_prev_test_str), lvl_ath.refresh_lvl(txt_ath, ls_prev, ls_prev_test_str)
+lvl_pwh.refresh_lvl(txt_pwh, ls_prev, ls_prev_test_str), lvl_pwl.refresh_lvl(txt_pwl, ls_prev, ls_prev_test_str)
+lvl_asia_h.refresh_lvl(txt_asia_h, ls_sess, ls_sess_test_str), lvl_asia_l.refresh_lvl(txt_asia_l, ls_sess, ls_sess_test_str)
+lvl_lon_h.refresh_lvl(txt_lon_h, ls_sess, ls_sess_test_str),   lvl_lon_l.refresh_lvl(txt_lon_l, ls_sess, ls_sess_test_str)
+lvl_ny_h.refresh_lvl(txt_ny_h, ls_sess, ls_sess_test_str),     lvl_ny_l.refresh_lvl(txt_ny_l, ls_sess, ls_sess_test_str)
+lvl_nypm_h.refresh_lvl(txt_nypm_h, ls_sess, ls_sess_test_str), lvl_nypm_l.refresh_lvl(txt_nypm_l, ls_sess, ls_sess_test_str)
+gap_ndog.refresh_gap(txt_ndog, ls_ndog, ls_ndog_test_str), gap_nwog.refresh_gap(txt_nwog, ls_nwog, ls_nwog_test_str)
+
+// =========================================================================
+// INFO PANEL
+// =========================================================================
+type TableRow
+    string name
+    float  p
+    bool   tested
+    int    tap_t
+    bool   is_header = false
+
+if barstate.islast and show_panel
+    eff_chk_bg  = chk_copy_colors ? panel_bg      : chk_bg
+    eff_chk_brd = chk_copy_colors ? panel_border   : chk_border
+    eff_chk_txt = chk_copy_colors ? panel_txt_col  : chk_txt_col
+    do_below    = show_chk_panel and combine_mode == "Below"
+    do_right    = show_chk_panel and combine_mode == "Right"
+
+    var chk_labels_info = array.new_string()
+    array.clear(chk_labels_info)
+    if do_below or do_right
+        if chk1_show and str.length(chk1_txt) > 0
+            array.push(chk_labels_info, chk1_txt)
+        if chk2_show and str.length(chk2_txt) > 0
+            array.push(chk_labels_info, chk2_txt)
+        if chk3_show and str.length(chk3_txt) > 0
+            array.push(chk_labels_info, chk3_txt)
+        if chk4_show and str.length(chk4_txt) > 0
+            array.push(chk_labels_info, chk4_txt)
+        if chk5_show and str.length(chk5_txt) > 0
+            array.push(chk_labels_info, chk5_txt)
+
+    var rows = array.new<TableRow>()
+    array.clear(rows)
+
+    // --- KEY LEVELS section ---
+    sec = array.size(rows)
+    if lvl_1800.drawn
+        array.push(rows, TableRow.new(txt_1800, lvl_1800.p, lvl_1800.tested, lvl_1800.tap_time))
+    if lvl_1930.drawn
+        array.push(rows, TableRow.new(txt_1930, lvl_1930.p, lvl_1930.tested, lvl_1930.tap_time))
+    if lvl_2200.drawn
+        array.push(rows, TableRow.new(txt_2200, lvl_2200.p, lvl_2200.tested, lvl_2200.tap_time))
+    if lvl_0000.drawn
+        array.push(rows, TableRow.new(txt_0000, lvl_0000.p, lvl_0000.tested, lvl_0000.tap_time))
+    if lvl_0130.drawn
+        array.push(rows, TableRow.new(txt_0130, lvl_0130.p, lvl_0130.tested, lvl_0130.tap_time))
+    if lvl_0200.drawn
+        array.push(rows, TableRow.new(txt_0200, lvl_0200.p, lvl_0200.tested, lvl_0200.tap_time))
+    if lvl_0300.drawn
+        array.push(rows, TableRow.new(txt_0300, lvl_0300.p, lvl_0300.tested, lvl_0300.tap_time))
+    if lvl_0600.drawn
+        array.push(rows, TableRow.new(txt_0600, lvl_0600.p, lvl_0600.tested, lvl_0600.tap_time))
+    if lvl_0730.drawn
+        array.push(rows, TableRow.new(txt_0730, lvl_0730.p, lvl_0730.tested, lvl_0730.tap_time))
+    if lvl_0830.drawn
+        array.push(rows, TableRow.new(txt_0830, lvl_0830.p, lvl_0830.tested, lvl_0830.tap_time))
+    if lvl_0930.drawn
+        array.push(rows, TableRow.new(txt_0930, lvl_0930.p, lvl_0930.tested, lvl_0930.tap_time))
+    if lvl_1000.drawn
+        array.push(rows, TableRow.new(txt_1000, lvl_1000.p, lvl_1000.tested, lvl_1000.tap_time))
+    if lvl_nq_1000.drawn
+        array.push(rows, TableRow.new(txt_nq_1000, lvl_nq_1000.p, lvl_nq_1000.tested, lvl_nq_1000.tap_time))
+    if lvl_mnq_1000.drawn
+        array.push(rows, TableRow.new(txt_mnq_1000, lvl_mnq_1000.p, lvl_mnq_1000.tested, lvl_mnq_1000.tap_time))
+    if lvl_c1.drawn
+        array.push(rows, TableRow.new(txt_c1, lvl_c1.p, lvl_c1.tested, lvl_c1.tap_time))
+    if lvl_c2.drawn
+        array.push(rows, TableRow.new(txt_c2, lvl_c2.p, lvl_c2.tested, lvl_c2.tap_time))
+    if lvl_c3.drawn
+        array.push(rows, TableRow.new(txt_c3, lvl_c3.p, lvl_c3.tested, lvl_c3.tap_time))
+    if array.size(rows) > sec
+        array.insert(rows, sec, TableRow.new(name="KEY LEVELS", is_header=true))
+
+    // --- WEEKLY / MONTHLY section ---
+    sec := array.size(rows)
+    if lvl_wo.drawn
+        array.push(rows, TableRow.new(txt_wo,  lvl_wo.p,  lvl_wo.tested,  lvl_wo.tap_time))
+    if lvl_two.drawn
+        array.push(rows, TableRow.new(txt_two, lvl_two.p, lvl_two.tested, lvl_two.tap_time))
+    if lvl_mo.drawn
+        array.push(rows, TableRow.new(txt_mo,  lvl_mo.p,  lvl_mo.tested,  lvl_mo.tap_time))
+    if lvl_tmo.drawn
+        array.push(rows, TableRow.new(txt_tmo, lvl_tmo.p, lvl_tmo.tested, lvl_tmo.tap_time))
+    if array.size(rows) > sec
+        array.insert(rows, sec, TableRow.new(name="WEEKLY / MONTHLY", is_header=true))
+
+    // --- PREV DAY / ATH section ---
+    sec := array.size(rows)
+    if lvl_pdh.drawn
+        array.push(rows, TableRow.new(txt_pdh, lvl_pdh.p, lvl_pdh.tested, lvl_pdh.tap_time))
+    if lvl_pdl.drawn
+        array.push(rows, TableRow.new(txt_pdl, lvl_pdl.p, lvl_pdl.tested, lvl_pdl.tap_time))
+    if lvl_ath.drawn
+        array.push(rows, TableRow.new(txt_ath, lvl_ath.p, lvl_ath.tested, lvl_ath.tap_time))
+    if lvl_pwh.drawn
+        array.push(rows, TableRow.new(txt_pwh, lvl_pwh.p, lvl_pwh.tested, lvl_pwh.tap_time))
+    if lvl_pwl.drawn
+        array.push(rows, TableRow.new(txt_pwl, lvl_pwl.p, lvl_pwl.tested, lvl_pwl.tap_time))
+    if array.size(rows) > sec
+        array.insert(rows, sec, TableRow.new(name="PREV DAY / ATH", is_header=true))
+
+    // --- SESSIONS section ---
+    sec := array.size(rows)
+    if panel_asia_hl
+        if lvl_asia_h.drawn
+            array.push(rows, TableRow.new(txt_asia_h, lvl_asia_h.p, lvl_asia_h.tested, lvl_asia_h.tap_time))
+        if lvl_asia_l.drawn
+            array.push(rows, TableRow.new(txt_asia_l, lvl_asia_l.p, lvl_asia_l.tested, lvl_asia_l.tap_time))
+    if panel_lon_hl
+        if lvl_lon_h.drawn
+            array.push(rows, TableRow.new(txt_lon_h, lvl_lon_h.p, lvl_lon_h.tested, lvl_lon_h.tap_time))
+        if lvl_lon_l.drawn
+            array.push(rows, TableRow.new(txt_lon_l, lvl_lon_l.p, lvl_lon_l.tested, lvl_lon_l.tap_time))
+    if panel_ny_hl
+        if lvl_ny_h.drawn
+            array.push(rows, TableRow.new(txt_ny_h, lvl_ny_h.p, lvl_ny_h.tested, lvl_ny_h.tap_time))
+        if lvl_ny_l.drawn
+            array.push(rows, TableRow.new(txt_ny_l, lvl_ny_l.p, lvl_ny_l.tested, lvl_ny_l.tap_time))
+    if panel_nypm_hl
+        if lvl_nypm_h.drawn
+            array.push(rows, TableRow.new(txt_nypm_h, lvl_nypm_h.p, lvl_nypm_h.tested, lvl_nypm_h.tap_time))
+        if lvl_nypm_l.drawn
+            array.push(rows, TableRow.new(txt_nypm_l, lvl_nypm_l.p, lvl_nypm_l.tested, lvl_nypm_l.tap_time))
+    if array.size(rows) > sec
+        array.insert(rows, sec, TableRow.new(name="SESSIONS", is_header=true))
+
+    // --- GAPS section ---
+    sec := array.size(rows)
+    if gap_ndog.drawn
+        if gap_ndog.show_top
+            array.push(rows, TableRow.new(txt_ndog + " Top", gap_ndog.p_top, gap_ndog.tested_top, gap_ndog.tap_time_top))
+        if gap_ndog.show_mid
+            array.push(rows, TableRow.new(txt_ndog + " Mid", gap_ndog.p_mid, gap_ndog.tested_mid, gap_ndog.tap_time_mid))
+        if gap_ndog.show_btm
+            array.push(rows, TableRow.new(txt_ndog + " Btm", gap_ndog.p_btm, gap_ndog.tested_btm, gap_ndog.tap_time_btm))
+    if gap_nwog.drawn
+        if gap_nwog.show_top
+            array.push(rows, TableRow.new(txt_nwog + " Top", gap_nwog.p_top, gap_nwog.tested_top, gap_nwog.tap_time_top))
+        if gap_nwog.show_mid
+            array.push(rows, TableRow.new(txt_nwog + " Mid", gap_nwog.p_mid, gap_nwog.tested_mid, gap_nwog.tap_time_mid))
+        if gap_nwog.show_btm
+            array.push(rows, TableRow.new(txt_nwog + " Btm", gap_nwog.p_btm, gap_nwog.tested_btm, gap_nwog.tap_time_btm))
+    if array.size(rows) > sec
+        array.insert(rows, sec, TableRow.new(name="GAPS", is_header=true))
+
+    int total_rows     = array.size(rows)
+    int chk_info_count = array.size(chk_labels_info)
+    chk_sz             = get_sz(chk_size_str)
+
+    int info_cols = 2
+    if show_panel_price
+        info_cols += 1
+    if show_panel_time
+        info_cols += 1
+    int total_cols = do_right and chk_info_count > 0 ? info_cols + 1 : info_cols
+
+    // Below: extra rows = header + items. Right: extra rows = 0 (uses existing rows).
+    int below_extra = do_below and chk_info_count > 0 ? chk_info_count + 1 : 0
+    int table_rows  = do_right and chk_info_count > 0 ? math.max(total_rows, chk_info_count) + 1 : total_rows + 1 + below_extra
+
+    var table info_panel = na
+    if not na(info_panel)
+        table.delete(info_panel)
+
+    if table_rows > 1 or (do_right and chk_info_count > 0)
+        info_panel := table.new(get_pos(panel_pos_str), total_cols, table_rows, bgcolor=panel_bg, border_width=1, border_color=panel_border, frame_color=panel_border, frame_width=1)
+        sz = get_sz(panel_size_str)
+
+        // Header row
+        int col_idx = 0
+        table.cell(info_panel, col_idx, 0, "LEVEL",  text_color=panel_txt_col, text_size=sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+        col_idx += 1
+        if show_panel_price
+            table.cell(info_panel, col_idx, 0, "PRICE",  text_color=panel_txt_col, text_size=sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+            col_idx += 1
+        table.cell(info_panel, col_idx, 0, "STATUS", text_color=panel_txt_col, text_size=sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+        col_idx += 1
+        if show_panel_time
+            table.cell(info_panel, col_idx, 0, "TAPPED (" + tz + ")", text_color=panel_txt_col, text_size=sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+            col_idx += 1
+        if do_right and chk_info_count > 0
+            table.cell(info_panel, col_idx, 0, "CHECKLIST", text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+
+        // Info rows
+        int max_data_rows = do_right ? math.max(total_rows, chk_info_count) : total_rows
+        for i = 0 to max_data_rows - 1
+            int curr_col = 0
+            if i < total_rows
+                r = array.get(rows, i)
+                if r.is_header
+                    // Section header row — darker background, name spans visually across all cols
+                    table.cell(info_panel, 0, i+1, r.name, text_color=panel_txt_col, text_size=sz, text_halign=text.align_left, bgcolor=color.new(color.black, 65))
+                    for hc = 1 to info_cols - 1
+                        table.cell(info_panel, hc, i+1, "", text_color=panel_txt_col, text_size=sz, bgcolor=color.new(color.black, 65))
+                    if do_right and chk_info_count > 0
+                        chk_val = i < chk_info_count ? array.get(chk_labels_info, i) : ""
+                        table.cell(info_panel, info_cols, i+1, chk_val, text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left)
+                else
+                    stat_col = r.tested ? color.gray : color.new(color.green, 20)
+                    stat_txt = r.tested ? "Tapped" + test_text : "Active"
+                    table.cell(info_panel, curr_col, i+1, r.name, text_color=panel_txt_col, text_size=sz, text_halign=text.align_left)
+                    curr_col += 1
+                    if show_panel_price
+                        table.cell(info_panel, curr_col, i+1, str.tostring(r.p, format.mintick), text_color=panel_txt_col, text_size=sz, text_halign=text.align_left)
+                        curr_col += 1
+                    table.cell(info_panel, curr_col, i+1, stat_txt, text_color=stat_col, text_size=sz, text_halign=text.align_left)
+                    curr_col += 1
+                    if show_panel_time
+                        time_str = not na(r.tap_t) ? str.format_time(r.tap_t, "MM/dd HH:mm", tz) : "-"
+                        table.cell(info_panel, curr_col, i+1, time_str, text_color=panel_txt_col, text_size=sz, text_halign=text.align_left)
+                    // Right-mode: checklist column for data rows
+                    if do_right and chk_info_count > 0
+                        chk_val = i < chk_info_count ? array.get(chk_labels_info, i) : ""
+                        table.cell(info_panel, info_cols, i+1, chk_val, text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left)
+            else if do_right
+                // Empty info cells when checklist has more rows than info
+                table.cell(info_panel, 0, i+1, "", text_color=panel_txt_col, text_size=sz)
+                int ec = 1
+                if show_panel_price
+                    table.cell(info_panel, ec, i+1, "", text_color=panel_txt_col, text_size=sz)
+                    ec += 1
+                table.cell(info_panel, ec, i+1, "", text_color=panel_txt_col, text_size=sz)
+                ec += 1
+                if show_panel_time
+                    table.cell(info_panel, ec, i+1, "", text_color=panel_txt_col, text_size=sz)
+                chk_val = i < chk_info_count ? array.get(chk_labels_info, i) : ""
+                table.cell(info_panel, info_cols, i+1, chk_val, text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left)
+
+        // Below-mode: checklist section appended after info rows
+        if do_below and chk_info_count > 0
+            int divider_row = total_rows + 1
+            table.cell(info_panel, 0, divider_row, "CHECKLIST", text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+            for c = 1 to info_cols - 1
+                table.cell(info_panel, c, divider_row, "", text_color=eff_chk_txt, text_size=chk_sz, bgcolor=color.new(color.black, 50))
+            for i = 0 to chk_info_count - 1
+                table.cell(info_panel, 0, divider_row + 1 + i, array.get(chk_labels_info, i), text_color=eff_chk_txt, text_size=chk_sz, text_halign=text.align_left)
+                for c = 1 to info_cols - 1
+                    table.cell(info_panel, c, divider_row + 1 + i, "", text_color=eff_chk_txt, text_size=chk_sz)
+
+// =========================================================================
+// CHECKLIST PANEL — toggle shows/hides the row, text field is the label
+// =========================================================================
+if barstate.islast
+    sa_chk_bg  = chk_copy_colors ? panel_bg     : chk_bg
+    sa_chk_brd = chk_copy_colors ? panel_border  : chk_border
+    sa_chk_txt = chk_copy_colors ? panel_txt_col : chk_txt_col
+
+    var chk_labels = array.new_string()
+    array.clear(chk_labels)
+
+    if show_chk_panel
+        if chk1_show and str.length(chk1_txt) > 0
+            array.push(chk_labels, chk1_txt)
+        if chk2_show and str.length(chk2_txt) > 0
+            array.push(chk_labels, chk2_txt)
+        if chk3_show and str.length(chk3_txt) > 0
+            array.push(chk_labels, chk3_txt)
+        if chk4_show and str.length(chk4_txt) > 0
+            array.push(chk_labels, chk4_txt)
+        if chk5_show and str.length(chk5_txt) > 0
+            array.push(chk_labels, chk5_txt)
+
+    int chk_count = array.size(chk_labels)
+    bool is_combined = combine_mode != "Off" and show_panel
+
+    // Standalone checklist table (only when not merged into info panel)
+    if show_chk_panel and not is_combined
+        var table chk_panel = na
+        if not na(chk_panel)
+            table.delete(chk_panel)
+        if chk_count > 0
+            chk_panel := table.new(get_pos(chk_pos_str), 1, chk_count + 1, bgcolor=sa_chk_bg, border_width=1, border_color=sa_chk_brd, frame_color=sa_chk_brd, frame_width=1)
+            chk_sz = get_sz(chk_size_str)
+            table.cell(chk_panel, 0, 0, "CHECKLIST", text_color=sa_chk_txt, text_size=chk_sz, text_halign=text.align_left, bgcolor=color.new(color.black, 50))
+            for i = 0 to chk_count - 1
+                table.cell(chk_panel, 0, i + 1, array.get(chk_labels, i), text_color=sa_chk_txt, text_size=chk_sz, text_halign=text.align_left)
