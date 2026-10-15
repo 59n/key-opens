@@ -282,23 +282,30 @@ reset_hr = input.int(18, "New Day Starts At (Hour)", minval=0, maxval=23, group=
 // =========================================================================
 tz = "America/New_York"
 
-is_mnq_chart = str.contains(syminfo.ticker, "MNQ")
-is_nq_chart  = str.contains(syminfo.ticker, "NQ") and not is_mnq_chart
+is_mnq_chart = syminfo.root == "MNQ" or str.startswith(syminfo.ticker, "MNQ")
+is_nq_chart  = (syminfo.root == "NQ" or (str.contains(syminfo.ticker, "NQ") and not str.contains(syminfo.ticker, "MNQ"))) and not is_mnq_chart
 is_nasdaq_fut = is_nq_chart or is_mnq_chart
 
-resolve_fut_sym(string override, bool want_nq) =>
+swap_nq_mnq(string tkr, bool want_nq) =>
+    want_nq ? str.replace(tkr, "MNQ", "NQ") : (str.contains(tkr, "MNQ") ? tkr : str.replace(tkr, "NQ", "MNQ"))
+
+norm_fut_tkr(string tkr) =>
+    str.endswith(tkr, "!") or str.length(tkr) >= 6 ? tkr : tkr + "1!"
+
+// Always pin the other contract to CME_MINI / CME. Broker prefixes and CME vs CME_MINI moves break bare "NQ1!".
+resolve_fut_sym(string override, bool want_nq, string exch) =>
     string out = syminfo.tickerid
     if str.length(override) > 0
-        out := str.contains(override, ":") ? override : (str.length(syminfo.prefix) > 0 ? syminfo.prefix + ":" + override : override)
-    else if is_nasdaq_fut
-        if want_nq
-            out := is_mnq_chart ? str.replace(syminfo.tickerid, "MNQ", "NQ") : syminfo.tickerid
-        else
-            out := is_mnq_chart ? syminfo.tickerid : str.replace(syminfo.tickerid, "NQ", "MNQ")
+        out := str.contains(override, ":") ? override : exch + ":" + override
+    else
+        tkr = norm_fut_tkr(swap_nq_mnq(syminfo.ticker, want_nq))
+        out := exch + ":" + tkr
     out
 
-nq_id  = resolve_fut_sym(nq_sym_in, true)
-mnq_id = resolve_fut_sym(mnq_sym_in, false)
+nq_id       = resolve_fut_sym(nq_sym_in,  true,  "CME_MINI")
+nq_id_cme   = resolve_fut_sym(nq_sym_in,  true,  "CME")
+mnq_id      = resolve_fut_sym(mnq_sym_in, false, "CME_MINI")
+mnq_id_cme  = resolve_fut_sym(mnq_sym_in, false, "CME")
 
 // Map setting string → Pine line style string (line styles are strings, not ints)
 to_lstyle(s) => s == "Dashed" ? line.style_dashed : s == "Dotted" ? line.style_dotted : line.style_solid
@@ -334,13 +341,18 @@ arr_o = request.security_lower_tf(syminfo.tickerid, ltf_res, open)
 arr_h = request.security_lower_tf(syminfo.tickerid, ltf_res, high)
 arr_l = request.security_lower_tf(syminfo.tickerid, ltf_res, low)
 arr_c = request.security_lower_tf(syminfo.tickerid, ltf_res, close)
-arr_nq_t  = request.security_lower_tf(nq_id, ltf_res, time)
-arr_nq_o  = request.security_lower_tf(nq_id, ltf_res, open)
-arr_mnq_t = request.security_lower_tf(mnq_id, ltf_res, time)
-arr_mnq_o = request.security_lower_tf(mnq_id, ltf_res, open)
-// Same-TF open for the other contract (reliable on 1m; on HTF this is that TF's open).
-nq_open_tf  = request.security(nq_id,  timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off)
-mnq_open_tf = request.security(mnq_id, timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off)
+arr_nq_t  = request.security_lower_tf(nq_id, ltf_res, time, ignore_invalid_symbol = true)
+arr_nq_o  = request.security_lower_tf(nq_id, ltf_res, open, ignore_invalid_symbol = true)
+arr_mnq_t = request.security_lower_tf(mnq_id, ltf_res, time, ignore_invalid_symbol = true)
+arr_mnq_o = request.security_lower_tf(mnq_id, ltf_res, open, ignore_invalid_symbol = true)
+nq_open_mini = request.security(nq_id,      timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+nq_open_cme  = request.security(nq_id_cme,  timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+nq_open_cont = request.security("CME_MINI:NQ1!", timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+mnq_open_mini = request.security(mnq_id,     timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+mnq_open_cme  = request.security(mnq_id_cme, timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+mnq_open_cont = request.security("CME_MINI:MNQ1!", timeframe.period, open, barmerge.gaps_off, barmerge.lookahead_off, ignore_invalid_symbol = true)
+nq_open_tf  = not na(nq_open_mini) ? nq_open_mini : (not na(nq_open_cme) ? nq_open_cme : nq_open_cont)
+mnq_open_tf = not na(mnq_open_mini) ? mnq_open_mini : (not na(mnq_open_cme) ? mnq_open_cme : mnq_open_cont)
 bool use_ltf = timeframe.in_seconds() > 60 and not na(arr_t) and array.size(arr_t) > 0
 
 // =========================================================================
@@ -865,15 +877,21 @@ get_10am_chart_prints(int t_target, bool ltf_on, int[] t_arr, float[] o_arr, flo
         pc  := close[1]
     [o10, pc]
 
-// Exact 10:00 NY 1m open from LTF arrays. Do not take 10:01+ (that prints a few ticks off).
-get_open_at_1000(int[] t_arr, float[] o_arr, float fallback) =>
+// Exact 10:00 NY minute from LTF. Window first (unix), then hour/minute, then same-TF fallback.
+get_open_at_1000(int t_target, int[] t_arr, float[] o_arr, float fallback) =>
     float o_ret = na
     if not na(t_arr) and array.size(t_arr) > 0
         for i = 0 to array.size(t_arr) - 1
             t1 = array.get(t_arr, i)
-            if hour(t1, tz) == 10 and minute(t1) == 0
+            if t1 >= t_target and t1 < t_target + 60000
                 o_ret := array.get(o_arr, i)
                 break
+        if na(o_ret)
+            for i = 0 to array.size(t_arr) - 1
+                t1 = array.get(t_arr, i)
+                if hour(t1, tz) == 10 and minute(t1) == 0
+                    o_ret := array.get(o_arr, i)
+                    break
     na(o_ret) ? fallback : o_ret
 
 // =========================================================================
@@ -908,7 +926,9 @@ check_daily_trig(lvl_0600, show_0600, txt_0600, c_0600_in, 06, 00, use_ltf, arr_
 check_daily_trig(lvl_0730, show_0730, txt_0730, c_0730_in, 07, 30, use_ltf, arr_t, arr_o)
 check_daily_trig(lvl_0830, show_0830, txt_0830, c_0830_in, 08, 30, use_ltf, arr_t, arr_o)
 check_daily_trig(lvl_0930, show_0930, txt_0930, c_0930_in, 09, 30, use_ltf, arr_t, arr_o)
-check_daily_trig(lvl_1000, show_1000, txt_1000, c_1000_in, 10, 00, use_ltf, arr_t, arr_o)
+// On GC/ES/etc, NQ/MNQ 10am toggles still mean "show this chart's 10am".
+show_chart_10am = show_1000 or (not is_nasdaq_fut and (show_nq_1000 or show_mnq_1000))
+check_daily_trig(lvl_1000, show_chart_10am, txt_1000, c_1000_in, 10, 00, use_ltf, arr_t, arr_o)
 
 var int vi_trig_time = na
 t_10 = timestamp(tz, year(time, tz), month(time, tz), dayofmonth(time, tz), 10, 00, 0)
@@ -929,12 +949,13 @@ if is_10_fire
     float nq_px  = na
     float mnq_px = na
     if is_nasdaq_fut and not na(open_10)
-        nq_px  := is_nq_chart  ? open_10 : get_open_at_1000(arr_nq_t,  arr_nq_o,  nq_open_tf)
-        mnq_px := is_mnq_chart ? open_10 : get_open_at_1000(arr_mnq_t, arr_mnq_o, mnq_open_tf)
+        nq_px  := is_nq_chart  ? open_10 : get_open_at_1000(t_10, arr_nq_t,  arr_nq_o,  nq_open_tf)
+        mnq_px := is_mnq_chart ? open_10 : get_open_at_1000(t_10, arr_mnq_t, arr_mnq_o, mnq_open_tf)
         tick = syminfo.mintick
-        differ_ok = not only_nq_mnq_diff or (not na(nq_px) and not na(mnq_px) and math.abs(nq_px - mnq_px) >= nq_mnq_diff_ticks * tick)
-        if only_nq_mnq_diff and (na(nq_px) or na(mnq_px))
-            differ_ok := false
+        // Filter only when BOTH extras are on. Enabling NQ alone on MNQ must always plot NQ.
+        differ_ok = true
+        if only_nq_mnq_diff and show_nq_1000 and show_mnq_1000 and not na(nq_px) and not na(mnq_px)
+            differ_ok := math.abs(nq_px - mnq_px) >= nq_mnq_diff_ticks * tick
         if show_nq_1000 and not na(nq_px) and differ_ok
             lvl_nq_1000.draw_lvl(txt_nq_1000, c_nq_1000_in, nq_px, bar_index, t_10, ls_key)
         if show_mnq_1000 and not na(mnq_px) and differ_ok
